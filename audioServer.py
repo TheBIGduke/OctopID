@@ -12,10 +12,10 @@ chunkSize = 1024 # Number of frames per buffer
 bassRangeStart = 60
 bassRangeEnd = 250
 
-async def audioStreamHandler(websocket, path):
+async def audioStreamHandler(websocket):
     """
     Handles the Websocket connection, captures system audio,
-    analizes it and sends data to the client.
+    analyzes it and sends data to the client.
     """
     print("Client connected --- Starting audio stream...")
 
