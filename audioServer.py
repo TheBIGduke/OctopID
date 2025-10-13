@@ -5,12 +5,16 @@ import soundcard as sc
 import numpy as np
 
 # Audio Processing Parameters
-sampleRate = 44100 # Audio sampler rate
-chunkSize = 1024 # Number of frames per buffer
+sampleRate = 44100
+chunkSize = 1024
 
-# Frequency Analysis Parameters
+# Expanded Frequency Analysis Parameters for Speech
 bassRangeStart = 60
 bassRangeEnd = 250
+midRangeStart = 251
+midRangeEnd = 2000  # Core range for human voice
+highRangeStart = 2001
+highRangeEnd = 6000 # Range for consonants and sibilance
 
 async def audioStreamHandler(websocket):
     """
@@ -19,33 +23,34 @@ async def audioStreamHandler(websocket):
     """
     print("Client connected --- Starting audio stream...")
 
-    # Find the default speaker's monitor source (loopback)
     try:
         with sc.get_microphone(id=str(sc.default_speaker().name), include_loopback=True).recorder(samplerate=sampleRate, channels=1) as mic:
             while True:
-                # Record a small chunk of audio data
                 data = mic.record(numframes=chunkSize)
-                # If there's no audio, continue
                 if data.size == 0:
                     continue
 
-                # Perform a Fast Fourier Transform (FFT)
-                # We use rfft for real-valued input, which is more efficient
-                fftData = np.fft.rfft(data[:,0])
+                fftData = np.fft.rfft(data[:, 0])
                 fftFreq = np.fft.rfftfreq(len(data[:, 0]), 1.0 / sampleRate)
 
-                # Feature Extraction: Calculate Bass Energy
-                # Find the indices corresponding to our defined bass range
+                # --- Feature Extraction for Bass, Mids, and Highs ---
                 bassIndices = np.where((fftFreq >= bassRangeStart) & (fftFreq <= bassRangeEnd))
+                midIndices = np.where((fftFreq >= midRangeStart) & (fftFreq <= midRangeEnd))
+                highIndices = np.where((fftFreq >= highRangeStart) & (fftFreq <= highRangeEnd))
 
-                # Calculate the average magnitude in the bass range
-                bassEnergy = np.mean(np.abs(fftData[bassIndices]))
+                bassEnergy = np.mean(np.abs(fftData[bassIndices])) if bassIndices[0].size > 0 else 0
+                midEnergy = np.mean(np.abs(fftData[midIndices])) if midIndices[0].size > 0 else 0
+                highEnergy = np.mean(np.abs(fftData[highIndices])) if highIndices[0].size > 0 else 0
 
-                # Normalize the value to a 0-1 range (simple normalization)
-                normalizedBass = min(bassEnergy / 50.0, 1.0) # Adjust to your system's volume
+                # Normalize each value. These divisors are tuned for sensitivity.
+                normalizedBass = min(bassEnergy / 30.0, 1.0)
+                normalizedMids = min(midEnergy / 20.0, 1.0)  # Mids are most important for voice
+                normalizedHighs = min(highEnergy / 35.0, 1.0)
 
                 payload = {
-                    "bass": normalizedBass
+                    "bass": normalizedBass,
+                    "mids": normalizedMids,
+                    "highs": normalizedHighs
                 }
 
                 await websocket.send(json.dumps(payload))
@@ -60,7 +65,7 @@ async def mainAsync():
     serverAddress = "localhost"
     serverPort = 1940
     print(f"Starting WebSocket server on ws://{serverAddress}:{serverPort}")
-    
+
     async with websockets.serve(audioStreamHandler, serverAddress, serverPort):
         await asyncio.Future()
 

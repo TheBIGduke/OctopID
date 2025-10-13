@@ -23,7 +23,7 @@
             height: 300px;
         }
         #mouth {
-            transition: d 0.1s ease-out; /* Smoother transition */
+            transition: d 0.1s linear; /* A simple, reliable CSS transition */
         }
         #status {
             margin-top: 20px;
@@ -32,13 +32,11 @@
         }
     </style>
 </head>
-
 <body>
     <div class="container">
         <svg id="face" viewBox="0 0 200 200">
             <ellipse class="eye" cx="70" cy="80" rx="10" ry="15" fill="#40D4D6"/>
             <ellipse class="eye" cx="130" cy="80" rx="10" ry="15" fill="#40D4D6"/>
-
             <path
                 id="mouth"
                 d="M 60 130 Q 100 135 140 130"
@@ -49,7 +47,6 @@
         </svg>
         <div id="status">Connecting to server...</div>
     </div>
-
     <script src="main.js"></script>
 </body>
 </html>
