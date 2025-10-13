@@ -1,7 +1,26 @@
 window.addEventListener('DOMContentLoaded', () => {
     const mouth = document.getElementById('mouth');
+    const eyes = document.querySelectorAll('.eye');
     const statusDiv = document.getElementById('status');
     const serverAddress = 'ws://localhost:1940';
+
+    const restingMouthPath = 'M 60 130 Q 100 135 140 130';
+
+    // --- Blinking Animation ---
+    const blink = () => {
+        eyes.forEach(eye => {
+            eye.setAttribute('ry', '1'); // Close eyes
+        });
+        setTimeout(() => {
+            eyes.forEach(eye => {
+                eye.setAttribute('ry', '15'); // Open eyes
+            });
+        }, 150); // Duration of the blink
+    };
+
+    // Blink every 4 seconds
+    setInterval(blink, 4000);
+
 
     console.log(`Connecting to WebSocket server at ${serverAddress}...`);
     const websocket = new WebSocket(serverAddress);
@@ -12,27 +31,24 @@ window.addEventListener('DOMContentLoaded', () => {
     };
 
     websocket.onmessage = (event) => {
-        // Parse the incoming JSON data from server
         const audioData = JSON.parse(event.data);
         const bassLevel = audioData.bass;
 
-        // Animate the mouth
-        // The curve of the smile is modified based on the bass level
-        // Attribute 'd' of the SVG path defines the shape
-        // Command "Q" creates a quadratic Bezier curve
-        // We are animating the 'y' coordinate of the curve's control point
+        const talkingThreshold = 0.1;
 
-        const baseHeight = 130;
-        const maxOpen = 40;
-        const mouthOpenness = baseHeight + (bassLevel * maxOpen);
+        if (bassLevel > talkingThreshold) {
+            // Reverted to the previous speaking animation
+            const maxRy = 25;
+            const maxRx = 45;
+            const ry = bassLevel * maxRy;
+            const rx = 40 + (bassLevel * (maxRx - 40));
 
-        const baseWidth = 60;
-        const maxWidthDisplacement = 20;
-        const mouthWidth = baseWidth - (bassLevel * maxWidthDisplacement);
-
-        const newPath = `M ${mouthWidth} 130 Q 100 ${mouthOpenness} ${200-mouthWidth} 130`;
-
-        mouth.setAttribute('d', newPath);
+            const newPath = `M ${100-rx},130 A ${rx},${ry} 0 1,1 ${100+rx},130 A ${rx},${ry} 0 1,1 ${100-rx},130 Z`;
+            mouth.setAttribute('d', newPath);
+        } else {
+            // Return to the resting semi-happy face
+            mouth.setAttribute('d', restingMouthPath);
+        }
     };
 
     websocket.onclose = () => {
