@@ -10,7 +10,7 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #2c3e50;
+            background-color: black;
             margin: 0;
             font-family: sans-serif;
             color: white;
@@ -36,18 +36,15 @@
 <body>
     <div class="container">
         <svg id="face" viewBox="0 0 200 200">
-            <!-- Face Background -->
-            <circle cx="100" cy="100" r="95" fill="#f1c40f" stroke="black" stroke-width="3"/>
-
             <!-- Eyes -->
-            <circle cx="70" cy="80" r="10" fill="black"/>
-            <circle cx="130" cy="80" r="10" fill="black"/>
+            <ellipse cx="70" cy="80" rx="10" ry="15" fill="#40D4D6"/>
+            <ellipse cx="130" cy="80" rx="10" ry="15" fill="#40D4D6"/>
 
             <!-- Mouth -->
             <path
                 id="mouth"
                 d="M 60 130 Q 100 160 140 130"
-                stroke="black"
+                stroke="#40D4D6"
                 stroke-width="5"
                 fill="transparent"
                 stroke-linecap="round"/>
