@@ -21,9 +21,13 @@
         #face {
             width: 300px;
             height: 300px;
+            transition: transform 0.8s ease-in-out; /* For smooth head tilting */
+        }
+        .eye {
+            transition: ry 0.1s ease-out; /* For smooth eye widening */
         }
         #mouth {
-            transition: d 0.1s linear; /* A simple, reliable CSS transition */
+            transition: d 0.1s linear;
         }
         #status {
             margin-top: 20px;
