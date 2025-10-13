@@ -22,12 +22,16 @@ window.addEventListener('DOMContentLoaded', () => {
         // Command "Q" creates a quadratic Bezier curve
         // We are animating the 'y' coordinate of the curve's control point
 
-        const baseCurve = 150;
-        const maxCurveDisplacement = 40;
+        const baseHeight = 130;
+        const maxOpen = 40;
+        const mouthOpenness = baseHeight + (bassLevel * maxOpen);
 
-        const newCurve = baseCurve + (bassLevel * maxCurveDisplacement);
+        const baseWidth = 60;
+        const maxWidthDisplacement = 20;
+        const mouthWidth = baseWidth - (bassLevel * maxWidthDisplacement);
 
-        const newPath = `M 60 130 Q 100 ${newCurve} 140 130`;
+        const newPath = `M ${mouthWidth} 130 Q 100 ${mouthOpenness} ${200-mouthWidth} 130`;
+
         mouth.setAttribute('d', newPath);
     };
 
