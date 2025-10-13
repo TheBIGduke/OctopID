@@ -32,4 +32,40 @@ async def audioStreamHandler(websocket, path):
                 # Perform a Fast Fourier Transform (FFT)
                 # We use rfft for real-valued input, which is more efficient
                 fftData = np.fft.rfft(data[:,0])
-                fftFreq = np.fft.rfftfreq(len(data))
+                fftFreq = np.fft.rfftfreq(len(data[:, 0]), 1.0 / sampleRate)
+
+                # Feature Extraction: Calculate Bass Energy
+                # Find the indices corresponding to our defined bass range
+                bassIndices = np.where((fftFreq >= bassRangeStart) & (fftFreq <= bassRangeEnd))
+
+                # Calculate the average magnitude in the bass range
+                bassEnergy = np.mean(np.abs(fftData[bassIndices]))
+
+                # Normalize the value to a 0-1 range (simple normalization)
+                normalizedBass = min(bassEnergy / 50.0, 1.0) # Adjust to your system's volume
+
+                payload = {
+                    "bass": normalizedBass
+                }
+
+                await websocket.send(json.dumps(payload))
+                await asyncio.sleep(0.01)
+    except websockets.exceptions.ConnectionClosed:
+        print("Client disconnected")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+async def mainAsync():
+    """Starts the WebSocket server"""
+    serverAddress = "localhost"
+    serverPort = 1940
+    print(f"Starting WebSocket server on ws://{serverAddress}:{serverPort}")
+    
+    async with websockets.serve(audioStreamHandler, serverAddress, serverPort):
+        await asyncio.Future()
+
+if __name__ == "__main__":
+    try:
+        asyncio.run(mainAsync())
+    except KeyboardInterrupt:
+        print("Server stopped")
