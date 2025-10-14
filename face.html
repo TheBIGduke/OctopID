@@ -7,101 +7,107 @@
     <style>
 
         :root {
-            --face-color: #40D4D6;
-            --background-color: black;
-            --text-color: #f0f0f0;
-            --button-bg: #2c2c2c;
-            --button-hover-bg: #3c3c3c;
-            --shadow-color: rgba(0, 0, 0, 0.2);
+            --face-color: #40D4D6;              /* Primary face/eye color (cyan) - overridden per expression */
+            --background-color: black;          /* Page background - change for light mode */
+            --text-color: #f0f0f0;              /* Default text/status color */
+            --button-bg: #2c2c2c;               /* Inactive button background */
+            --button-hover-bg: #3c3c3c;         /* Button border and hover state */
+            --shadow-color: rgba(0, 0, 0, 0.2);/* Soft shadows for depth */
         }
 
         body {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+            display: flex;                      /* Enable flexbox layout */
+            flex-direction: column;             /* Stack child elements vertically */
+            justify-content: center;            /* Center content vertically */
+            align-items: center;                /* Center content horizontally */
+            height: 100vh;                      /* Full viewport height (100% of screen) */
             background-color: var(--background-color);
-            margin: 0;
-            font-family: 'Inter', sans-serif;
+            margin: 0;                          /* Remove default browser margins */
+            font-family: 'Inter', sans-serif;   /* Clean, modern font */
             color: var(--text-color);
-            padding: 20px;
-            box-sizing: border-box;
+            padding: 20px;                      /* Breathing room on edges */
+            box-sizing: border-box;             /* Padding included in width calculation */
         }
 
         .container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-            width: 100%;
-            max-width: 600px;
+            display: flex;                      /* Enable flexbox */
+            flex-direction: column;             /* Stack items vertically */
+            align-items: center;                /* Center items horizontally */
+            gap: 20px;                          /* Space between face, buttons, status (customize spacing here) */
+            width: 100%;                        /* Full available width */
+            max-width: 600px;                   /* Don't exceed 600px on large screens */
         }
 
+        /* ========================================================================
+           FACE ELEMENTS
+           ======================================================================== */
         #face {
-            width: 100%;
-            height: auto;
-            overflow: visible; /* ensures nothing gets hidden */
+            width: 100%;                        /* Responsive: fills container width */
+            height: auto;                       /* Maintain 1:1 aspect ratio */
+            overflow: visible;                  /* Allow animations to extend beyond SVG bounds */
         }
 
-        /* Applying a transition to all animated parts for smooth expression changes */
         .eye-background, .eye-icon-container path {
-            transition: d 0.3s ease-in-out, fill 0.3s ease-in-out, stroke 0.3s ease-in-out, transform 0.3s ease-in-out;
-            transform-origin: center;
+            /* Smooth all visual property changes over 0.3 seconds */
+            transition: d 0.3s ease-in-out, fill 0.3s ease-in-out, 
+                        stroke 0.3s ease-in-out, transform 0.3s ease-in-out;
+            transform-origin: center;           /* Scale/rotate from center point */
         }
 
         #mouth {
-            transition: d 0.1s linear;
+            transition: d 0.1s linear;          /* Quick, predictable animation */
         }
 
         .eye {
-            /* For smooth blinking and panning animation */
+            /* Smooth eye movements (blinking and panning) */
             transition: transform 0.4s ease-in-out;
-            transform-origin: center;
+            transform-origin: center;           /* Pivot point for transformations */
         }
+
+        /* ======================================================================== */
         
         #status {
-            margin-top: 10px;
-            font-size: 1em;
-            color: #bdc3c7;
-            min-height: 1.2em;
+            margin-top: 10px;                   /* Space above status (fine-tuning) */
+            font-size: 1em;                     /* Standard readable size */
+            color: #bdc3c7;                     /* Muted gray (secondary text) */
+            min-height: 1.2em;                  /* Prevents layout shift when text updates */
         }
         
         .controls {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
-            padding: 15px;
+            display: flex;                      /* Flexible layout for buttons */
+            flex-wrap: wrap;                    /* Allow buttons to wrap on small screens */
+            justify-content: center;            /* Center buttons horizontally */
+            gap: 10px;                          /* Space between buttons (CUSTOMIZE HERE) */
+            padding: 15px;                      /* Inner padding of panel */
             background-color: var(--button-bg);
-            border-radius: 12px;
-            box-shadow: 0 4px 15px var(--shadow-color);
+            border-radius: 12px;                /* Rounded corners (change for square look) */
+            box-shadow: 0 4px 15px var(--shadow-color); /* Subtle depth effect */
         }
 
         .controls button {
-            padding: 10px 15px;
-            font-size: 0.9em;
-            font-weight: 500;
+            padding: 10px 15px;                 /* Inner space (touch target size) */
+            font-size: 0.9em;                   /* Slightly smaller than body text */
+            font-weight: 500;                   /* Medium weight (between normal/bold) */
             color: var(--text-color);
             background-color: var(--button-bg);
-            border: 1px solid var(--button-hover-bg);
-            border-radius: 8px;
-            cursor: pointer;
+            border: 1px solid var(--button-hover-bg); /* Subtle border definition */
+            border-radius: 8px;                 /* Rounded button corners */
+            cursor: pointer;                    /* Show it's clickable */
+            /* Smooth transitions for all interactive changes */
             transition: background-color 0.2s ease, transform 0.1s ease;
         }
 
         .controls button:active {
-            transform: translateY(0);
+            transform: translateY(0);           /* Button press feedback (customize here) */
         }
 
-        /* Media query for smaller screens */
         @media (max-width: 600px) {
             .controls {
-                gap: 8px;
+                gap: 8px;                       /* Tighter spacing on mobile */
             }
             .controls button {
-                padding: 8px 12px;
-                font-size: 0.8em;
+                padding: 8px 12px;              /* Smaller buttons to fit screen */
+                font-size: 0.8em;               /* Smaller text */
             }
         }
 
@@ -110,22 +116,35 @@
 <body>
     <div class="container">
         <svg id="face" viewBox="0 0 200 200">
+            
+            <!-- LEFT EYE GROUP -->
             <g class="eye" id="left-eye">
+                <!-- The eye background is the visible eyeball shape -->
                 <path class="eye-background" d="M 5,110 L 5,80 A 15,30 0 0,1 35,80 L 35,110 Z" />
+                <!-- Container for optional eye icons (pupils, special effects, etc.) -->
                 <g class="eye-icon-container"></g>
             </g>
+
+            <!-- RIGHT EYE GROUP (mirror of left) -->
             <g class="eye" id="right-eye">
+                <!-- Right eyeball shape -->
                 <path class="eye-background" d="M 165,110 L 165,80 A 15,30 0 0,1 195,80 L 195,110 Z" />
+                <!-- Icon container for right eye -->
                 <g class="eye-icon-container"></g>
             </g>
+
+            <!-- MOUTH PATH -->
+            <!-- Initially empty - will be populated by JavaScript based on expression -->
+            <!-- The mouth animates quickly to show different emotions and audio response -->
             <path
                 id="mouth"
-                stroke-width="5"
-                fill="transparent"
-                stroke-linecap="round"/>
+                stroke-width="5"                <!-- Line thickness (in SVG units) -->
+                fill="transparent"              <!-- Start transparent, fills on certain expressions -->
+                stroke-linecap="round"/>        <!-- Round line endings (vs sharp/square) -->
         </svg>
 
         <div class="controls">
+            <!-- Each onclick calls JavaScript function with expression name -->
             <button onclick="setExpression('neutral')">Neutral</button>
             <button onclick="setExpression('happy')">Happy</button>
             <button onclick="setExpression('sad')">Sad</button>
@@ -141,271 +160,394 @@
             <button onclick="setExpression('sick')">Sick</button>
             <button onclick="setExpression('innocent')">Innocent</button>
             <button onclick="setExpression('worried')">Worried</button>
+            <!-- Special "listening" mode connects to audio input -->
             <button onclick="setExpression('listening')">Listen</button>
         </div>
         
         <div id="status">Select an expression or try 'Listen'</div>
     </div>
 
-    <script>
-        // --- DOM Element References ---
+    <script>        
+        // Get the mouth element (will be updated dynamically)
         const mouth = document.getElementById('mouth');
+        
+        // Get the left and right eye
         const leftEye = document.querySelector('#left-eye .eye-background');
         const rightEye = document.querySelector('#right-eye .eye-background');
         const eyes = document.querySelectorAll('.eye');
         const leftEyeIcon = document.querySelector('#left-eye .eye-icon-container');
         const rightEyeIcon = document.querySelector('#right-eye .eye-icon-container');
+        
+        // Get the status display div (shows mood/connection status)
         const statusDiv = document.getElementById('status');
         const root = document.documentElement;
-
-        // --- State Management ---
         let currentExpression = 'neutral';
+        
+        // WebSocket connection object (null until connected in listening mode)
         let webSocket;
         let audioAnimationId;
+        
+        // Flag: true when eyes should be wide (prevents blinking)
         let isWideEyed = false;
+        
+        // Used when eyes look left/right
         let currentPanX = 0;
+        // Used when eyes look up/down
         let currentPanY = 0;
 
-        // --- Eye Panning Animation ---
+        /* ====================================================================
+           ANIMATION LOGIC - EYE PANNING
+           ==================================================================== */
         const panEyes = () => {
-            // Don't pan on expressions where it would look weird
+            // Some expressions look weird with panning eyes - skip them
+            // (sleepy and dizzy eyes shouldn't move around)
             if (['sleepy', 'wink', 'dizzy', 'love'].includes(currentExpression)) {
                 return;
             }
             
+            // This moves eyes 10 pixels left or right
             currentPanX = Math.random() * 20 - 10;
+            
+            // Similar for vertical: -6 to +6 pixels up/down
             currentPanY = Math.random() * 12 - 6;
             
+            // Apply the pan transform to both eyes simultaneously
+            // scaleY(1) keeps them open (full height)
             eyes.forEach(eye => {
-                // Apply pan while keeping the eye open (scaleY(1))
                 eye.style.transform = `translate(${currentPanX}px, ${currentPanY}px) scaleY(1)`;
             });
         };
         setInterval(panEyes, Math.random() * 4000 + 3000);
         
-        // --- Blinking Animation ---
+        /* ====================================================================
+           ANIMATION LOGIC - BLINKING
+           ==================================================================== */
         const blink = () => {
-            // Disable blinking for certain expressions
+            // Don't blink during wide-eyed expressions or when sleeping/winking
             if (isWideEyed || ['sleepy', 'wink'].includes(currentExpression)) return;
 
-            const blinkTransitionSpeed = '0.1s';
+            const blinkTransitionSpeed = '0.1s'; // How fast to close eyes
             
+            // Close eyes: reduce vertical scale to near-zero (but not quite invisible)
             eyes.forEach(eye => {
-                eye.style.transitionDuration = blinkTransitionSpeed; // Speed up for blink
-                // Apply the current pan AND the blink scale
+                eye.style.transitionDuration = blinkTransitionSpeed;
+                // Maintain current pan position while closing
                 eye.style.transform = `translate(${currentPanX}px, ${currentPanY}px) scaleY(0.1)`;
             });
             
+            // After 150ms, reopen eyes
             setTimeout(() => {
+                // Double-check we shouldn't be wide-eyed
                 if (!isWideEyed) {
                     eyes.forEach(eye => {
-                        // Restore the pan and open the eye
+                        // Restore normal vertical scale (fully open)
                         eye.style.transform = `translate(${currentPanX}px, ${currentPanY}px) scaleY(1)`;
                     });
                 }
-            }, 150);
+            }, 150); // Duration eyes stay closed (in milliseconds)
         };
         setInterval(blink, Math.random() * 5000 + 2000);
 
 
-        // --- Expression Definitions ---
+        /* ====================================================================
+           EXPRESSION DEFINITIONS - THE EMOTIONAL DATABASE
+           ==================================================================== */
         const expressions = {
+            /* NEUTRAL - calm, default state */
             neutral: {
-                color: '#40D4D6',
-                mouthPath: 'M 60 130 L 140 130',
-                leftEyePath: 'M 5,110 L 5,80 A 15,30 0 0,1 35,80 L 35,110 Z',
+                color: '#40D4D6',                  /* Cyan - calm, balanced */
+                mouthPath: 'M 60 130 L 140 130',   /* Straight horizontal line */
+                leftEyePath: 'M 5,110 L 5,80 A 15,30 0 0,1 35,80 L 35,110 Z',  /* Normal eye */
                 rightEyePath: 'M 165,110 L 165,80 A 15,30 0 0,1 195,80 L 195,110 Z',
             },
+            
+            /* HAPPY - positive, friendly */
             happy: {
-                color: '#6AF2A0',
-                mouthPath: 'M 60 130 Q 100 150 140 130',
-                leftEyePath: 'M 5,100 A 15,40 0 0,1 35,100',
+                color: '#6AF2A0',                  /* Bright green - positive, life */
+                mouthPath: 'M 60 130 Q 100 150 140 130', /* Smile curves downward */
+                leftEyePath: 'M 5,100 A 15,40 0 0,1 35,100', /* Curved happy eye (C shape) */
                 rightEyePath: 'M 165,100 A 15,40 0 0,1 195,100',
             },
+            
+            /* SAD - negative, melancholic */
             sad: {
-                color: '#5B8DEF',
-                mouthPath: 'M 60 140 Q 100 120 140 140',
-                leftEyePath: 'M 5,90 A 15,40 0 0,0 35,90',
+                color: '#5B8DEF',                  /* Cool blue - sadness, contemplation */
+                mouthPath: 'M 60 140 Q 100 120 140 140', /* Sad mouth curves upward */
+                leftEyePath: 'M 5,90 A 15,40 0 0,0 35,90', /* Inverted arc (sad eye) */
                 rightEyePath: 'M 165,90 A 15,40 0 0,0 195,90',
             },
+            
+            /* ANGRY - aggressive, frustrated */
             angry: {
-                color: '#E74C3C',
-                mouthPath: 'M 60 140 L 140 140',
-                leftEyePath: 'M 5,60 L 35,80 L 35,110 L 5,110 Z',
-                rightEyePath: 'M 165,75 L 195,60 L 195,110 L 165,110 Z',
+                color: '#E74C3C',                  /* Red - danger, anger, intensity */
+                mouthPath: 'M 60 140 L 140 140',   /* Straight angry mouth */
+                leftEyePath: 'M 5,60 L 35,80 L 35,110 L 5,110 Z', /* Angular shapes */
+                rightEyePath: 'M 165,75 L 195,60 L 195,110 L 165,110 Z', /* Tilted angry look */
             },
+            
+            /* SURPRISED - shocked, amazed */
             surprised: {
-                color: '#F1C40F',
-                mouthPath: 'M 90 130 A 10 15 0 1 0 110 130 A 10 15 0 1 0 90 130 Z',
-                leftEyePath: 'M 5,115 L 5,75 A 15,35 0 0,1 35,75 L 35,115 Z',
+                color: '#F1C40F',                  /* Bright yellow - attention, surprise */
+                mouthPath: 'M 90 130 A 10 15 0 1 0 110 130 A 10 15 0 1 0 90 130 Z', /* O mouth */
+                leftEyePath: 'M 5,115 L 5,75 A 15,35 0 0,1 35,75 L 35,115 Z', /* Extra large eye */
                 rightEyePath: 'M 165,115 L 165,75 A 15,35 0 0,1 195,75 L 195,115 Z',
             },
+            
+            /* LOVE - affectionate, romantic */
             love: {
-                color: '#E87AF2',
-                mouthPath: 'M 60 130 Q 100 145 140 130',
-                leftEyePath: 'M 10,130 C -20,85 -20,20 10,60 C 40,20 40,85 10,130 Z',
+                color: '#E87AF2',                  /* Pink/magenta - love, affection */
+                mouthPath: 'M 60 130 Q 100 145 140 130', /* Tender smile */
+                leftEyePath: 'M 10,130 C -20,85 -20,20 10,60 C 40,20 40,85 10,130 Z', /* Heart shape! */
                 rightEyePath: 'M 190,130 C 160,85 160,20 190,60 C 220,20 220,85 190,130 Z',
             },
+            
+            /* DIZZY - confused, overwhelmed, disoriented */
             dizzy: {
-                color: '#9B59B6',
-                mouthPath: 'M 60 135 Q 80 125, 100 135 T 140 135',
-                leftEyePath: 'M 20,95 m -18,0 a18,18 0 1,1 36,0 a12,12 0 1,1 -24,0 a6,6 0 1,1 12,0',
+                color: '#9B59B6',                  /* Purple - mysterious, confusion */
+                mouthPath: 'M 60 135 Q 80 125, 100 135 T 140 135', /* Squiggly mouth */
+                leftEyePath: 'M 20,95 m -18,0 a18,18 0 1,1 36,0 a12,12 0 1,1 -24,0 a6,6 0 1,1 12,0', /* Spiral */
                 rightEyePath: 'M 180,95 m -18,0 a18,18 0 1,1 36,0 a12,12 0 1,1 -24,0 a6,6 0 1,1 12,0',
             },
+            
+            /* THINKING - thoughtful, contemplative, uncertain */
             thinking: {
-                color: '#3498DB',
-                mouthPath: 'M 70 135 L 130 125',
+                color: '#3498DB',                  /* Blue - thoughtfulness, focus */
+                mouthPath: 'M 70 135 L 130 125',   /* Tilted thinking line */
                 leftEyePath: 'M 15,110 L 15,80 A 15,30 0 0,1 45,80 L 45,110 Z',
                 rightEyePath: 'M 175,110 L 175,80 A 15,30 0 0,1 205,80 L 205,110 Z',
             },
+            
+            /* SLEEPY - tired, drowsy, resting */
             sleepy: {
-                color: '#95A5A6',
-                mouthPath: 'M 95 135 A 5 5 0 1 0 105 135 A 5 5 0 1 0 95 135 Z',
-                leftEyePath: 'M 5,110 A 15,30 0 0,1 35,110',
+                color: '#95A5A6',                  /* Gray - tired, faded energy */
+                mouthPath: 'M 95 135 A 5 5 0 1 0 105 135 A 5 5 0 1 0 95 135 Z', /* Small O mouth */
+                leftEyePath: 'M 5,110 A 15,30 0 0,1 35,110', /* Horizontal line (closed) */
                 rightEyePath: 'M 165,110 A 15,30 0 0,1 195,110',
             },
+            
+            /* WINK - playful, flirty, mischievous */
             wink: {
-                color: '#FFB84D',
-                mouthPath: 'M 60 130 Q 100 135 140 125',
-                leftEyePath: 'M 5,110 L 5,80 A 15,30 0 0,1 35,80 L 35,110 Z',
-                rightEyePath: 'M 160,80 A 15,5 0 0,1 195,80',
+                color: '#FFB84D',                  /* Orange/gold - playful, fun */
+                mouthPath: 'M 60 130 Q 100 135 140 125', /* Smirk/smile */
+                leftEyePath: 'M 5,110 L 5,80 A 15,30 0 0,1 35,80 L 35,110 Z', /* Open eye */
+                rightEyePath: 'M 160,80 A 15,5 0 0,1 195,80', /* Closed line (winking) */
             },
+            
+            /* SCARED - fearful, terrified, anxious */
             scared: {
-                color: '#A8E6CF',
-                mouthPath: 'M 80 145 L 95 135 L 110 145 L 125 135 L 140 145',
-                leftEyePath: 'M 5,115 L 5,75 A 15,35 0 0,1 35,75 L 35,115 Z',
+                color: '#A8E6CF',                  /* Light cyan - fear, vulnerability */
+                mouthPath: 'M 80 145 L 95 135 L 110 145 L 125 135 L 140 145', /* Jagged scared mouth */
+                leftEyePath: 'M 5,115 L 5,75 A 15,35 0 0,1 35,75 L 35,115 Z', /* Large wide eyes */
                 rightEyePath: 'M 165,115 L 165,75 A 15,35 0 0,1 195,75 L 195,115 Z',
             },
+            
+            /* CONFUSED - puzzled, bewildered, uncertain */
             confused: {
-                color: '#BCA0DC',
-                mouthPath: 'M 70 135 Q 90 145, 110 135 T 140 140',
-                leftEyePath: 'M 5,110 L 5,80 A 15,30 0 0,1 35,80 L 35,110 Z',
-                rightEyePath: 'M 165,80 A 15,40 0 0,0 195,80',
+                color: '#BCA0DC',                  /* Light purple - confusion, uncertainty */
+                mouthPath: 'M 70 135 Q 90 145, 110 135 T 140 140', /* Uncertain wavy mouth */
+                leftEyePath: 'M 5,110 L 5,80 A 15,30 0 0,1 35,80 L 35,110 Z', /* Normal eye */
+                rightEyePath: 'M 165,80 A 15,40 0 0,0 195,80', /* Different eye (puzzled look) */
             },
+            
+            /* SICK - ill, nauseous, unwell */
             sick: {
-                color: '#88B04B',
-                mouthPath: 'M 70 140 C 90 120, 110 150, 130 130',
-                leftEyePath: 'M 5,100 L 35,50 L 35,110 L 5,110 Z',
-                rightEyePath: 'M 165,85 L 195,80 L 195,110 L 165,110 Z'
+                color: '#88B04B',                  /* Green - sickness, nausea */
+                mouthPath: 'M 70 140 C 90 120, 110 150, 130 130', /* Wavy sick mouth */
+                leftEyePath: 'M 5,100 L 35,50 L 35,110 L 5,110 Z', /* X eye (one direction) */
+                rightEyePath: 'M 165,85 L 195,80 L 195,110 L 165,110 Z', /* X eye (other direction) */
             },
+            
+            /* INNOCENT - pure, naive, virtuous */
             innocent: {
-                color: '#E0E0E0',
-                mouthPath: 'M 90 135 Q 100 140 110 135',
-                leftEyePath: 'M 5,115 L 5,75 A 15,35 0 0,1 35,75 L 35,115 Z',
-                rightEyePath: 'M 165,115 L 165,75 A 15,35 0 0,1 195,75 L 195,115 Z'
+                color: '#E0E0E0',                  /* Light gray/white - innocence, purity */
+                mouthPath: 'M 90 135 Q 100 140 110 135', /* Gentle small smile */
+                leftEyePath: 'M 5,115 L 5,75 A 15,35 0 0,1 35,75 L 35,115 Z', /* Wide innocent eyes */
+                rightEyePath: 'M 165,115 L 165,75 A 15,35 0 0,1 195,75 L 195,115 Z',
             },
+            
+            /* WORRIED - anxious, concerned, stressed */
             worried: {
-                color: '#7f8c8d',
-                mouthPath: 'M 60 145 Q 100 135 140 145',
-                leftEyePath: 'M 5,80 L 35,60 L 35,110 L 5,110 Z',
-                rightEyePath: 'M 165,60 L 195,80 L 195,110 L 165,110 Z'
+                color: '#7f8c8d',                  /* Dark gray - worry, tension */
+                mouthPath: 'M 60 145 Q 100 135 140 145', /* Downturned worried mouth */
+                leftEyePath: 'M 5,80 L 35,60 L 35,110 L 5,110 Z', /* Tilted worried eye */
+                rightEyePath: 'M 165,60 L 195,80 L 195,110 L 165,110 Z', /* Opposite tilt */
             },
+            
+            /* LISTENING - audio-responsive mode (special case) */
             listening: {
-                color: '#40D4D6'
+                color: '#40D4D6',                  /* Return to default cyan */
+                /* No static paths - this mode connects to WebSocket and animates dynamically */
             }
         };
 
-        // --- Core Function to Change Expression ---
+        /* ====================================================================
+           CORE FUNCTION - setExpression()
+           ==================================================================== */
         function setExpression(name) {
+            // audioAnimationId is the ID from requestAnimationFrame (audio listening mode)
             if (audioAnimationId) {
+                // Cancel the animation loop
                 cancelAnimationFrame(audioAnimationId);
                 audioAnimationId = null;
+                // Reset mouth fill to transparent (audio mode was filling it)
                 mouth.style.fill = 'transparent';
             }
+
+            // webSocket is only open during "listening" mode
             if(webSocket && webSocket.readyState === WebSocket.OPEN) {
                 webSocket.close();
             }
 
-            // Reset eye pan on expression change for a clean transition
+            // This creates a smooth transition - eyes snap back to neutral position
             currentPanX = 0;
             currentPanY = 0;
             eyes.forEach(eye => {
-                eye.style.transitionDuration = '0.4s'; // Restore default pan speed
+                // Restore transition speed to normal (it was fast during blink)
+                eye.style.transitionDuration = '0.4s';
+                // Reset transform to identity (no translation or scaling)
                 eye.style.transform = 'translate(0, 0) scaleY(1)';
             });
 
-
+            // Only "surprised" should be wide-eyed (prevents blinking)
             isWideEyed = (name === 'surprised');
             currentExpression = name;
             const expr = expressions[name];
 
+            // If no matching expression found, abort silently
             if (!expr) return;
 
+            // This mode doesn't use static SVG paths - it streams audio data
             if (name === 'listening') {
                 connectWebSocket();
                 return;
             }
 
+            // This changes --face-color which affects both eyes and mouth
             root.style.setProperty('--face-color', expr.color);
-            mouth.setAttribute('stroke', 'var(--face-color)');
+            
+            mouth.setAttribute('stroke', 'var(--face-color)'); // Use CSS variable
+            mouth.setAttribute('d', expr.mouthPath);            // Update shape
+            
             leftEye.setAttribute('fill', 'var(--face-color)');
-            rightEye.setAttribute('fill', 'var(--face-color)');
-            mouth.setAttribute('d', expr.mouthPath);
             leftEye.setAttribute('d', expr.leftEyePath);
+            
+            rightEye.setAttribute('fill', 'var(--face-color)');
             rightEye.setAttribute('d', expr.rightEyePath);
 
+            // Some expressions might have pupils or special effects (not currently used)
             if (expr.icon) {
                 leftEyeIcon.innerHTML = expr.icon;
                 rightEyeIcon.innerHTML = expr.icon;
-                leftEyeIcon.querySelectorAll('path').forEach(p => { if (p.getAttribute('fill') !== 'none') p.setAttribute('fill', expr.color) });
-                rightEyeIcon.querySelectorAll('path').forEach(p => { if (p.getAttribute('fill') !== 'none') p.setAttribute('fill', expr.color) });
+                // Color the icon SVG elements to match expression
+                leftEyeIcon.querySelectorAll('path').forEach(p => { 
+                    if (p.getAttribute('fill') !== 'none') p.setAttribute('fill', expr.color);
+                });
+                rightEyeIcon.querySelectorAll('path').forEach(p => { 
+                    if (p.getAttribute('fill') !== 'none') p.setAttribute('fill', expr.color);
+                });
             } else {
+                // Clear icons if none are defined
                 leftEyeIcon.innerHTML = '';
                 rightEyeIcon.innerHTML = '';
             }
+
             statusDiv.textContent = `Current mood: ${name}`;
         }
 
-        // --- WebSocket Logic for 'Listening' Mode ---
+        /* ====================================================================
+           WEBSOCKET LOGIC - AUDIO LISTENING MODE
+           ==================================================================== */
         function connectWebSocket() {
-            const serverAddress = 'ws://localhost:1940';
+            const serverAddress = 'ws://localhost:1940'; // Local audio server address
             webSocket = new WebSocket(serverAddress);
 
             webSocket.onopen = () => {
                 console.log('Successfully connected to the WebSocket server');
                 statusDiv.textContent = 'Connected! Play some audio...';
                 
+                // Initial mouth state (neutral/closed)
                 let targetMouthPath = expressions.neutral.mouthPath;
                 let currentMouthPath = expressions.neutral.mouthPath;
                 
                 webSocket.onmessage = (event) => {
+                    // Parse incoming JSON data
+                    // Expected format: { "bass": 0.0 to 1.0 }
                     const audioData = JSON.parse(event.data);
-                    const bassLevel = audioData.bass;
-                    const talkingThreshold = 0.1;
+                    const bassLevel = audioData.bass;              /* Audio intensity (0-1) */
+                    const talkingThreshold = 0.1;                 /* Minimum to open mouth */
 
+                    // Decide mouth state based on audio
                     if (bassLevel > talkingThreshold) {
+                        // Audio detected - open mouth proportionally
+                        // bassLevel * 40 means:
+                        // - bassLevel 0.1 = 4px mouth open
+                        // - bassLevel 0.5 = 20px mouth open  
+                        // - bassLevel 1.0 = 40px mouth open
                         const mouthOpenness = bassLevel * 40;
+                        
+                        // SVG arc path for open mouth
+                        // A = arc, parameters: rx ry rotation large-arc sweep x y
                         targetMouthPath = `M 60 130 A 40 ${mouthOpenness} 0 0 0 140 130 Z`;
-                        mouth.style.fill = 'var(--face-color)';
+                        mouth.style.fill = 'var(--face-color)'; /* Fill the mouth when open */
                     } else {
+                        // No significant audio - close mouth
                         targetMouthPath = expressions.neutral.mouthPath;
-                        mouth.style.fill = 'transparent';
+                        mouth.style.fill = 'transparent'; /* Unfill when closed */
                     }
                 };
 
+                /* ============================================================
+                   ANIMATION LOOP - Mouth Position Interpolation
+                   ============================================================ */
                 const animateMouth = () => {
+                    // Safety check: stop if connection lost
                     if (webSocket.readyState !== WebSocket.OPEN) return;
                     
+                    // Extract all numbers from SVG path strings
+                    // SVG paths like "M 60 130 L 140 130" become [60, 130, 140, 130]
                     const currentPoints = (currentMouthPath.match(/[-+]?[0-9]*\.?[0-9]+/g) || []).map(Number);
                     const targetPoints = (targetMouthPath.match(/[-+]?[0-9]*\.?[0-9]+/g) || []).map(Number);
                     let newPath;
 
+                    // Handle mismatched path structures
+                    // (e.g., switching from line to arc or vice versa)
                     if (currentPoints.length !== targetPoints.length) {
+                        // Can't interpolate - jump to target immediately
                         newPath = targetMouthPath;
                     } else {
-                        const newPoints = currentPoints.map((point, i) => point + (targetPoints[i] - point) * 0.3);
+                        // Interpolate between current and target points
+                        // 0.3 factor = 30% of the distance per frame
+                        // Increase factor (e.g., 0.5) for snappier response
+                        // Decrease factor (e.g., 0.1) for slower, smoother motion
+                        const newPoints = currentPoints.map((point, i) => 
+                            point + (targetPoints[i] - point) * 0.3
+                        );
+                        
+                        // Reconstruct SVG path from interpolated points
+                        // Different path types have different numbers of values
+                        
                         if (newPoints.length === 4) {
+                            /* LINE PATH: M x1 y1 L x2 y2 */
                             newPath = `M ${newPoints[0]} ${newPoints[1]} L ${newPoints[2]} ${newPoints[3]}`;
                         } else if (newPoints.length === 9) {
+                            /* ARC PATH: M x1 y1 A rx ry rot large sweep x2 y2 Z */
                             newPath = `M ${newPoints[0]} ${newPoints[1]} A ${newPoints[2]} ${newPoints[3]} ${newPoints[4]} ${newPoints[5]} ${newPoints[6]} ${newPoints[7]} ${newPoints[8]} Z`;
                         } else {
+                            // Unexpected path format - fall back to target
                             newPath = targetMouthPath;
                         }
                     }
+                    
+                    // Update mouth display with interpolated path
                     currentMouthPath = newPath;
                     mouth.setAttribute('d', newPath);
+                    
+                    // Schedule next frame
+                    // This creates continuous 60fps animation loop
                     audioAnimationId = requestAnimationFrame(animateMouth);
                 };
+                
+                // Start the animation loop
                 animateMouth();
             };
 
@@ -422,8 +564,9 @@
             };
         }
 
-        // --- Initial Setup ---
         window.addEventListener('DOMContentLoaded', () => {
+            // Set initial expression to neutral when page loads
+            // This runs all the setup code in setExpression()
             setExpression('neutral');
         });
 
