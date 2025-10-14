@@ -3,6 +3,7 @@ import json
 import websockets
 import soundcard as sc
 import numpy as np
+from collections import deque
 
 # Audio Processing Parameters
 sampleRate = 44100
@@ -22,6 +23,7 @@ async def audioStreamHandler(websocket):
     analyzes it and sends data to the client.
     """
     print("Client connected --- Starting audio stream...")
+    bass_history = deque(maxlen=5) # Store the last 5 bass values for smoothing
 
     try:
         with sc.get_microphone(id=str(sc.default_speaker().name), include_loopback=True).recorder(samplerate=sampleRate, channels=1) as mic:
@@ -44,11 +46,16 @@ async def audioStreamHandler(websocket):
 
                 # Normalize each value. These divisors are tuned for sensitivity.
                 normalizedBass = min(bassEnergy / 30.0, 1.0)
+                
+                # --- Smoothing ---
+                bass_history.append(normalizedBass)
+                smoothed_bass = np.mean(bass_history)
+
                 normalizedMids = min(midEnergy / 20.0, 1.0)  # Mids are most important for voice
                 normalizedHighs = min(highEnergy / 35.0, 1.0)
 
                 payload = {
-                    "bass": normalizedBass,
+                    "bass": smoothed_bass, # Use the smoothed value
                     "mids": normalizedMids,
                     "highs": normalizedHighs
                 }
