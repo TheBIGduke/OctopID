@@ -5,12 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OctopID Expressions</title>
     <style>
-        /* Using the Inter font from Google Fonts for a clean look */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
 
         :root {
             --face-color: #40D4D6;
-            --background-color: black;
+            --background-color: #1a1a1a;
             --text-color: #f0f0f0;
             --button-bg: #2c2c2c;
             --button-hover-bg: #3c3c3c;
@@ -49,8 +47,18 @@
         }
 
         /* Applying a transition to all animated parts for smooth expression changes */
-        #mouth, .eye-background, .eye-icon-container path {
+        .eye-background, .eye-icon-container path {
             transition: d 0.3s ease-in-out, fill 0.3s ease-in-out, stroke 0.3s ease-in-out, transform 0.3s ease-in-out;
+            transform-origin: center;
+        }
+
+        #mouth {
+            transition: d 0.1s linear;
+        }
+
+        .eye {
+            /* For smooth blinking animation */
+            transition: transform 0.1s ease-out;
             transform-origin: center;
         }
         
@@ -84,11 +92,6 @@
             transition: background-color 0.2s ease, transform 0.1s ease;
         }
 
-        .controls button:hover {
-            background-color: var(--button-hover-bg);
-            transform: translateY(-2px);
-        }
-
         .controls button:active {
             transform: translateY(0);
         }
@@ -111,21 +114,19 @@
         <svg id="face" viewBox="0 0 200 200">
             <!-- Left Eye Group -->
             <g class="eye" id="left-eye">
-                <path class="eye-background" d="M 5,110 L 5,80 A 15,30 0 0,1 35,80 L 35,110 Z" fill="#40D4D6"/>
+                <path class="eye-background" d="M 5,110 L 5,80 A 15,30 0 0,1 35,80 L 35,110 Z" />
                 <g class="eye-icon-container"></g>
             </g>
             <!-- Right Eye Group -->
             <g class="eye" id="right-eye">
-                <path class="eye-background" d="M 165,110 L 165,80 A 15,30 0 0,1 195,80 L 195,110 Z" fill="#40D4D6"/>
+                <path class="eye-background" d="M 165,110 L 165,80 A 15,30 0 0,1 195,80 L 195,110 Z" />
                 <g class="eye-icon-container"></g>
             </g>
             <!-- Mouth -->
             <path
                 id="mouth"
-                d="M 60 130 L 140 130"
                 stroke-width="5"
                 fill="transparent"
-                stroke="#40D4D6"
                 stroke-linecap="round"/>
         </svg>
 
@@ -145,6 +146,223 @@
         <div id="status">Select an expression or try 'Listen'</div>
     </div>
 
-    <script src="main.js"></script>
+    <script>
+        // --- DOM Element References ---
+        const mouth = document.getElementById('mouth');
+        const leftEye = document.querySelector('#left-eye .eye-background');
+        const rightEye = document.querySelector('#right-eye .eye-background');
+        const eyes = document.querySelectorAll('.eye');
+        const leftEyeIcon = document.querySelector('#left-eye .eye-icon-container');
+        const rightEyeIcon = document.querySelector('#right-eye .eye-icon-container');
+        const statusDiv = document.getElementById('status');
+        const root = document.documentElement;
+
+        // --- State Management ---
+        let currentExpression = 'neutral';
+        let webSocket;
+        let audioAnimationId;
+        let isWideEyed = false;
+
+        // --- Blinking Animation ---
+        const blink = () => {
+            if (isWideEyed) return;
+            eyes.forEach(eye => {
+                eye.style.transform = 'scaleY(0.1)';
+            });
+            setTimeout(() => {
+                if (!isWideEyed) {
+                    eyes.forEach(eye => {
+                        eye.style.transform = 'scaleY(1)';
+                    });
+                }
+            }, 150);
+        };
+        setInterval(blink, Math.random() * 5000 + 2000);
+
+        // --- Expression Definitions ---
+        const expressions = {
+            neutral: {
+                color: '#40D4D6',
+                mouthPath: 'M 60 130 L 140 130',
+                leftEyePath: 'M 5,110 L 5,80 A 15,30 0 0,1 35,80 L 35,110 Z',
+                rightEyePath: 'M 165,110 L 165,80 A 15,30 0 0,1 195,80 L 195,110 Z',
+                icon: ''
+            },
+            happy: {
+                color: '#6AF2A0',
+                mouthPath: 'M 60 130 Q 100 150 140 130',
+                leftEyePath: 'M 5,100 A 15,20 0 0,1 35,100',
+                rightEyePath: 'M 165,100 A 15,20 0 0,1 195,100',
+                icon: ''
+            },
+            sad: {
+                color: '#5B8DEF',
+                mouthPath: 'M 60 140 Q 100 120 140 140',
+                leftEyePath: 'M 5,90 A 15,20 0 0,0 35,90',
+                rightEyePath: 'M 165,90 A 15,20 0 0,0 195,90',
+                icon: ''
+            },
+            angry: {
+                color: '#E74C3C',
+                mouthPath: 'M 60 140 L 140 140',
+                leftEyePath: 'M 5,80 L 35,95 L 35,110 L 5,110 Z',
+                rightEyePath: 'M 165,95 L 195,80 L 195,110 L 165,110 Z',
+                icon: ''
+            },
+            surprised: {
+                color: '#F1C40F',
+                mouthPath: 'M 90 130 A 10 15 0 1 0 110 130 A 10 15 0 1 0 90 130 Z',
+                leftEyePath: 'M 5,115 L 5,75 A 15,35 0 0,1 35,75 L 35,115 Z',
+                rightEyePath: 'M 165,115 L 165,75 A 15,35 0 0,1 195,75 L 195,115 Z',
+                icon: ''
+            },
+            love: {
+                color: '#E87AF2',
+                mouthPath: 'M 60 130 Q 100 145 140 130',
+                leftEyePath: 'M 5,110 L 5,80 A 15,30 0 0,1 35,80 L 35,110 Z',
+                rightEyePath: 'M 165,110 L 165,80 A 15,30 0 0,1 195,80 L 195,110 Z',
+                icon: '<path d="M20,10 C10,0 0,10 0,15 C0,25 10,30 10,30 C10,30 20,25 20,15 C20,10 10,0 10,10 Z" transform="translate(7, 80)" fill="#E87AF2"/>'
+            },
+            dizzy: {
+                color: '#9B59B6',
+                mouthPath: 'M 60 135 Q 80 125, 100 135 T 140 135',
+                leftEyePath: 'M 5,110 L 5,80 A 15,30 0 0,1 35,80 L 35,110 Z',
+                rightEyePath: 'M 165,110 L 165,80 A 15,30 0 0,1 195,80 L 195,110 Z',
+                icon: '<path d="M15,15 m-10,0 a10,10 0 1,0 20,0 a10,10 0 1,0 -20,0 M15,15 m-6,0 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0" transform="translate(5, 80)" stroke-width="2.5" stroke="#fff" fill="none"/>'
+            },
+            thinking: {
+                color: '#3498DB',
+                mouthPath: 'M 70 135 L 130 125',
+                leftEyePath: 'M 15,110 L 15,80 A 15,30 0 0,1 45,80 L 45,110 Z',
+                rightEyePath: 'M 175,110 L 175,80 A 15,30 0 0,1 205,80 L 205,110 Z',
+                icon: ''
+            },
+            sleepy: {
+                color: '#95A5A6',
+                mouthPath: 'M 95 135 A 5 5 0 1 0 105 135 A 5 5 0 1 0 95 135 Z',
+                leftEyePath: 'M 5,110 A 15,30 0 0,1 35,110',
+                rightEyePath: 'M 165,110 A 15,30 0 0,1 195,110',
+                icon: ''
+            },
+            listening: {
+                color: '#40D4D6'
+            }
+        };
+
+        // --- Core Function to Change Expression ---
+        function setExpression(name) {
+            if (audioAnimationId) {
+                cancelAnimationFrame(audioAnimationId);
+                audioAnimationId = null;
+                mouth.style.fill = 'transparent';
+            }
+            if(webSocket && webSocket.readyState === WebSocket.OPEN) {
+                webSocket.close();
+            }
+
+            isWideEyed = (name === 'surprised');
+            currentExpression = name;
+            const expr = expressions[name];
+
+            if (!expr) return;
+
+            if (name === 'listening') {
+                connectWebSocket();
+                return;
+            }
+
+            root.style.setProperty('--face-color', expr.color);
+            mouth.setAttribute('stroke', 'var(--face-color)');
+            leftEye.setAttribute('fill', 'var(--face-color)');
+            rightEye.setAttribute('fill', 'var(--face-color)');
+            mouth.setAttribute('d', expr.mouthPath);
+            leftEye.setAttribute('d', expr.leftEyePath);
+            rightEye.setAttribute('d', expr.rightEyePath);
+
+            if (expr.icon) {
+                leftEyeIcon.innerHTML = expr.icon;
+                rightEyeIcon.innerHTML = expr.icon;
+                leftEyeIcon.querySelectorAll('path').forEach(p => { if (p.getAttribute('fill') !== 'none') p.setAttribute('fill', expr.color) });
+                rightEyeIcon.querySelectorAll('path').forEach(p => { if (p.getAttribute('fill') !== 'none') p.setAttribute('fill', expr.color) });
+            } else {
+                leftEyeIcon.innerHTML = '';
+                rightEyeIcon.innerHTML = '';
+            }
+            statusDiv.textContent = `Current mood: ${name}`;
+        }
+
+        // --- WebSocket Logic for 'Listening' Mode ---
+        function connectWebSocket() {
+            const serverAddress = 'ws://localhost:1940';
+            webSocket = new WebSocket(serverAddress);
+
+            webSocket.onopen = () => {
+                console.log('Successfully connected to the WebSocket server');
+                statusDiv.textContent = 'Connected! Play some audio...';
+                
+                let targetMouthPath = expressions.neutral.mouthPath;
+                let currentMouthPath = expressions.neutral.mouthPath;
+                
+                webSocket.onmessage = (event) => {
+                    const audioData = JSON.parse(event.data);
+                    const bassLevel = audioData.bass;
+                    const talkingThreshold = 0.1;
+
+                    if (bassLevel > talkingThreshold) {
+                        const mouthOpenness = bassLevel * 40;
+                        targetMouthPath = `M 60 130 A 40 ${mouthOpenness} 0 0 0 140 130 Z`;
+                        mouth.style.fill = 'var(--face-color)';
+                    } else {
+                        targetMouthPath = expressions.neutral.mouthPath;
+                        mouth.style.fill = 'transparent';
+                    }
+                };
+
+                const animateMouth = () => {
+                    if (webSocket.readyState !== WebSocket.OPEN) return;
+                    
+                    const currentPoints = (currentMouthPath.match(/[-+]?[0-9]*\.?[0-9]+/g) || []).map(Number);
+                    const targetPoints = (targetMouthPath.match(/[-+]?[0-9]*\.?[0-9]+/g) || []).map(Number);
+                    let newPath;
+
+                    if (currentPoints.length !== targetPoints.length) {
+                        newPath = targetMouthPath;
+                    } else {
+                        const newPoints = currentPoints.map((point, i) => point + (targetPoints[i] - point) * 0.3);
+                        if (newPoints.length === 4) {
+                            newPath = `M ${newPoints[0]} ${newPoints[1]} L ${newPoints[2]} ${newPoints[3]}`;
+                        } else if (newPoints.length === 9) {
+                            newPath = `M ${newPoints[0]} ${newPoints[1]} A ${newPoints[2]} ${newPoints[3]} ${newPoints[4]} ${newPoints[5]} ${newPoints[6]} ${newPoints[7]} ${newPoints[8]} Z`;
+                        } else {
+                            newPath = targetMouthPath;
+                        }
+                    }
+                    currentMouthPath = newPath;
+                    mouth.setAttribute('d', newPath);
+                    audioAnimationId = requestAnimationFrame(animateMouth);
+                };
+                animateMouth();
+            };
+
+            webSocket.onclose = () => {
+                console.log('Disconnected from the WebSocket server');
+                statusDiv.textContent = 'Disconnected. Restart Python server.';
+                setExpression('neutral');
+            };
+
+            webSocket.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                statusDiv.textContent = 'Connection Error. Is the Python server running?';
+                setExpression('neutral');
+            };
+        }
+
+        // --- Initial Setup ---
+        window.addEventListener('DOMContentLoaded', () => {
+            setExpression('neutral');
+        });
+
+    </script>
 </body>
 </html>
+
