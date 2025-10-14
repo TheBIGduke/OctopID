@@ -8,7 +8,7 @@
 
         :root {
             --face-color: #40D4D6;
-            --background-color: #1a1a1a;
+            --background-color: black;
             --text-color: #f0f0f0;
             --button-bg: #2c2c2c;
             --button-hover-bg: #3c3c3c;
@@ -44,8 +44,6 @@
             overflow: visible; /* ensures nothing gets hidden */
         }
 
-
-
         /* Applying a transition to all animated parts for smooth expression changes */
         .eye-background, .eye-icon-container path {
             transition: d 0.3s ease-in-out, fill 0.3s ease-in-out, stroke 0.3s ease-in-out, transform 0.3s ease-in-out;
@@ -57,8 +55,8 @@
         }
 
         .eye {
-            /* For smooth blinking animation */
-            transition: transform 0.1s ease-out;
+            /* For smooth blinking and panning animation */
+            transition: transform 0.4s ease-in-out;
             transform-origin: center;
         }
         
@@ -112,17 +110,14 @@
 <body>
     <div class="container">
         <svg id="face" viewBox="0 0 200 200">
-            <!-- Left Eye Group -->
             <g class="eye" id="left-eye">
                 <path class="eye-background" d="M 5,110 L 5,80 A 15,30 0 0,1 35,80 L 35,110 Z" />
                 <g class="eye-icon-container"></g>
             </g>
-            <!-- Right Eye Group -->
             <g class="eye" id="right-eye">
                 <path class="eye-background" d="M 165,110 L 165,80 A 15,30 0 0,1 195,80 L 195,110 Z" />
                 <g class="eye-icon-container"></g>
             </g>
-            <!-- Mouth -->
             <path
                 id="mouth"
                 stroke-width="5"
@@ -168,22 +163,50 @@
         let webSocket;
         let audioAnimationId;
         let isWideEyed = false;
+        let currentPanX = 0;
+        let currentPanY = 0;
 
+        // --- Eye Panning Animation ---
+        const panEyes = () => {
+            // Don't pan on expressions where it would look weird
+            if (['sleepy', 'wink', 'dizzy', 'love'].includes(currentExpression)) {
+                return;
+            }
+            
+            currentPanX = Math.random() * 20 - 10;
+            currentPanY = Math.random() * 12 - 6;
+            
+            eyes.forEach(eye => {
+                // Apply pan while keeping the eye open (scaleY(1))
+                eye.style.transform = `translate(${currentPanX}px, ${currentPanY}px) scaleY(1)`;
+            });
+        };
+        setInterval(panEyes, Math.random() * 4000 + 3000);
+        
         // --- Blinking Animation ---
         const blink = () => {
-            if (isWideEyed) return;
+            // Disable blinking for certain expressions
+            if (isWideEyed || ['sleepy', 'wink'].includes(currentExpression)) return;
+
+            const blinkTransitionSpeed = '0.1s';
+            
             eyes.forEach(eye => {
-                eye.style.transform = 'scaleY(0.1)';
+                eye.style.transitionDuration = blinkTransitionSpeed; // Speed up for blink
+                // Apply the current pan AND the blink scale
+                eye.style.transform = `translate(${currentPanX}px, ${currentPanY}px) scaleY(0.1)`;
             });
+            
             setTimeout(() => {
                 if (!isWideEyed) {
                     eyes.forEach(eye => {
-                        eye.style.transform = 'scaleY(1)';
+                        // Restore the pan and open the eye
+                        eye.style.transform = `translate(${currentPanX}px, ${currentPanY}px) scaleY(1)`;
                     });
                 }
             }, 150);
         };
         setInterval(blink, Math.random() * 5000 + 2000);
+
 
         // --- Expression Definitions ---
         const expressions = {
@@ -293,6 +316,15 @@
                 webSocket.close();
             }
 
+            // Reset eye pan on expression change for a clean transition
+            currentPanX = 0;
+            currentPanY = 0;
+            eyes.forEach(eye => {
+                eye.style.transitionDuration = '0.4s'; // Restore default pan speed
+                eye.style.transform = 'translate(0, 0) scaleY(1)';
+            });
+
+
             isWideEyed = (name === 'surprised');
             currentExpression = name;
             const expr = expressions[name];
@@ -398,4 +430,3 @@
     </script>
 </body>
 </html>
-
