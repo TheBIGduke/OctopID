@@ -11,6 +11,7 @@ const root = document.documentElement;
 let currentExpression = 'neutral';
 let webSocket;
 let audioListeningInterval;
+let restingMouthPath = 'M 60 130 L 140 130'; // Default resting mouth
 
 // --- Expression Definitions ---
 // A collection of face configurations for different moods.
@@ -84,22 +85,19 @@ const expressions = {
         rightEyePath: 'M 165,110 A 15,30 0 0,1 195,110',
         icon: ''
     },
-    listening: {
-        // This state is handled dynamically by the websocket logic
+     listening: { // Keep for the button functionality
         color: '#40D4D6'
     }
 };
 
 // --- Core Function to Change Expression ---
 function setExpression(name) {
-    // Stop listening animation if it's running
-    if (audioListeningInterval) {
-        cancelAnimationFrame(audioListeningInterval);
-        audioListeningInterval = null;
-        mouth.style.fill = 'transparent'; // Reset mouth fill
-    }
-    if(webSocket && webSocket.readyState === WebSocket.OPEN) {
-        webSocket.close();
+    if (name === 'listening') {
+        // 'Listen' button now just ensures the connection is active
+        if (!webSocket || webSocket.readyState !== WebSocket.OPEN) {
+            connectWebSocket();
+        }
+        return;
     }
 
     currentExpression = name;
@@ -107,20 +105,16 @@ function setExpression(name) {
 
     if (!expr) return;
 
-    // Handle the special 'listening' state
-    if (name === 'listening') {
-        connectWebSocket();
-        return;
-    }
-
     // Update CSS variable for color and apply to SVG elements
     root.style.setProperty('--face-color', expr.color);
     mouth.setAttribute('stroke', 'var(--face-color)');
     leftEye.setAttribute('fill', 'var(--face-color)');
     rightEye.setAttribute('fill', 'var(--face-color)');
 
+    // Update resting mouth path
+    restingMouthPath = expr.mouthPath;
+
     // Update SVG paths
-    mouth.setAttribute('d', expr.mouthPath);
     leftEye.setAttribute('d', expr.leftEyePath);
     rightEye.setAttribute('d', expr.rightEyePath);
 
@@ -146,7 +140,7 @@ function setExpression(name) {
     statusDiv.textContent = `Current mood: ${name}`;
 }
 
-// --- WebSocket Logic for 'Listening' Mode ---
+// --- WebSocket Logic for Reactive Mouth ---
 function connectWebSocket() {
     const serverAddress = 'ws://localhost:1940';
     webSocket = new WebSocket(serverAddress);
@@ -154,9 +148,10 @@ function connectWebSocket() {
     webSocket.onopen = () => {
         console.log('Successfully connected to the WebSocket server');
         statusDiv.textContent = 'Connected! Play some audio...';
-        
-        let targetMouthPath = expressions.neutral.mouthPath;
-        const restingMouthPath = expressions.neutral.mouthPath;
+
+        let currentMouthOpenness = 0;
+        let targetMouthOpenness = 0;
+        const animationSmoothing = 0.2; // Lower is smoother
 
         webSocket.onmessage = (event) => {
             const audioData = JSON.parse(event.data);
@@ -164,40 +159,50 @@ function connectWebSocket() {
             const talkingThreshold = 0.1;
 
             if (bassLevel > talkingThreshold) {
-                const mouthOpenness = bassLevel * 40;
-                targetMouthPath = `M 60 130 A 40 ${mouthOpenness} 0 0 0 140 130 Z`;
+                targetMouthOpenness = bassLevel * 40;
                 mouth.style.fill = 'var(--face-color)';
             } else {
-                targetMouthPath = restingMouthPath;
+                targetMouthOpenness = 0;
                 mouth.style.fill = 'transparent';
             }
         };
 
         // Smoothed mouth animation loop
         const animateMouth = () => {
-            // This function is complex, so we'll simplify the animation
-            // by setting the path directly for responsiveness.
-            // For smoother results, a proper SVG morphing library or
-            // a more complex interpolation function would be needed.
-            mouth.setAttribute('d', targetMouthPath);
-            if (currentExpression === 'listening') {
-                audioListeningInterval = requestAnimationFrame(animateMouth);
+            currentMouthOpenness += (targetMouthOpenness - currentMouthOpenness) * animationSmoothing;
+
+            if (currentMouthOpenness < 1) {
+                mouth.setAttribute('d', restingMouthPath);
+            } else {
+                const newMouthPath = `M 60 130 A 40 ${currentMouthOpenness} 0 0 0 140 130 Z`;
+                mouth.setAttribute('d', newMouthPath);
             }
+
+            audioListeningInterval = requestAnimationFrame(animateMouth);
         };
+
         if (!audioListeningInterval) {
-            audioListeningInterval =  requestAnimationFrame(animateMouth);
+            audioListeningInterval = requestAnimationFrame(animateMouth);
         }
     };
 
     webSocket.onclose = () => {
         console.log('Disconnected from the WebSocket server');
         statusDiv.textContent = 'Disconnected. Restart Python server.';
+        if (audioListeningInterval) {
+            cancelAnimationFrame(audioListeningInterval);
+            audioListeningInterval = null;
+        }
         setExpression('neutral'); // Revert to neutral on disconnect
     };
 
     webSocket.onerror = (error) => {
         console.error('WebSocket error:', error);
         statusDiv.textContent = 'Connection Error. Is the Python server running?';
+        if (audioListeningInterval) {
+            cancelAnimationFrame(audioListeningInterval);
+            audioListeningInterval = null;
+        }
         setExpression('neutral');
     };
 }
@@ -206,4 +211,6 @@ function connectWebSocket() {
 window.addEventListener('DOMContentLoaded', () => {
     // Set the initial expression on page load
     setExpression('neutral');
+    // Connect to the WebSocket server to enable reactive mouth from the start
+    connectWebSocket();
 });
