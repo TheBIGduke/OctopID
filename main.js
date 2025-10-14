@@ -52,13 +52,6 @@ window.addEventListener('DOMContentLoaded', () => {
     };
     setInterval(breathe, 1500);
 
-    // --- Head Tilt Animation ---
-    const tiltHead = () => {
-        const tiltAngle = Math.random() * 12 - 6; // Tilt between -6 and 6 degrees
-        face.style.transform = `rotate(${tiltAngle}deg)`;
-    };
-    setInterval(tiltHead, Math.random() * 7000 + 8000); // Tilt every 8-15 seconds
-
     const websocket = new WebSocket(serverAddress);
 
     websocket.onopen = () => {
@@ -82,16 +75,6 @@ window.addEventListener('DOMContentLoaded', () => {
             targetMouthPath = `M ${100-rx},130 A ${rx},${ry} 0 1,1 ${100+rx},130 A ${rx},${ry} 0 1,1 ${100-rx},130 Z`;
         } else {
             targetMouthPath = restingMouthPath;
-        }
-        
-        // --- Eye widening reaction to high frequencies ---
-        if (highLevel > highThreshold && !isWideEyed) {
-            isWideEyed = true;
-            eyes.forEach(eye => eye.setAttribute('ry', '20')); // Widen eyes
-            setTimeout(() => {
-                eyes.forEach(eye => eye.setAttribute('ry', '15')); // Return to normal
-                isWideEyed = false;
-            }, 300); // Hold the expression for a short time
         }
     };
 
