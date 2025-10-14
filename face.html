@@ -40,11 +40,11 @@
 
         #face {
             width: 100%;
-            max-width: 300px;
             height: auto;
-            /* Smooth transition for color changes */
-            transition: all 0.3s ease;
+            overflow: visible; /* ensures nothing gets hidden */
         }
+
+
 
         /* Applying a transition to all animated parts for smooth expression changes */
         .eye-background, .eye-icon-container path {
@@ -140,6 +140,7 @@
             <button onclick="setExpression('dizzy')">Dizzy</button>
             <button onclick="setExpression('thinking')">Thinking</button>
             <button onclick="setExpression('sleepy')">Sleepy</button>
+            <button onclick="setExpression('wink')">Wink</button>
             <button onclick="setExpression('listening')">Listen</button>
         </div>
         
@@ -186,64 +187,62 @@
                 mouthPath: 'M 60 130 L 140 130',
                 leftEyePath: 'M 5,110 L 5,80 A 15,30 0 0,1 35,80 L 35,110 Z',
                 rightEyePath: 'M 165,110 L 165,80 A 15,30 0 0,1 195,80 L 195,110 Z',
-                icon: ''
             },
             happy: {
                 color: '#6AF2A0',
                 mouthPath: 'M 60 130 Q 100 150 140 130',
-                leftEyePath: 'M 5,100 A 15,20 0 0,1 35,100',
-                rightEyePath: 'M 165,100 A 15,20 0 0,1 195,100',
-                icon: ''
+                leftEyePath: 'M 5,100 A 15,40 0 0,1 35,100',
+                rightEyePath: 'M 165,100 A 15,40 0 0,1 195,100',
             },
             sad: {
                 color: '#5B8DEF',
                 mouthPath: 'M 60 140 Q 100 120 140 140',
-                leftEyePath: 'M 5,90 A 15,20 0 0,0 35,90',
-                rightEyePath: 'M 165,90 A 15,20 0 0,0 195,90',
-                icon: ''
+                leftEyePath: 'M 5,90 A 15,40 0 0,0 35,90',
+                rightEyePath: 'M 165,90 A 15,40 0 0,0 195,90',
             },
             angry: {
                 color: '#E74C3C',
                 mouthPath: 'M 60 140 L 140 140',
-                leftEyePath: 'M 5,80 L 35,95 L 35,110 L 5,110 Z',
-                rightEyePath: 'M 165,95 L 195,80 L 195,110 L 165,110 Z',
-                icon: ''
+                leftEyePath: 'M 5,60 L 35,80 L 35,110 L 5,110 Z',
+                rightEyePath: 'M 165,75 L 195,60 L 195,110 L 165,110 Z',
             },
             surprised: {
                 color: '#F1C40F',
                 mouthPath: 'M 90 130 A 10 15 0 1 0 110 130 A 10 15 0 1 0 90 130 Z',
                 leftEyePath: 'M 5,115 L 5,75 A 15,35 0 0,1 35,75 L 35,115 Z',
                 rightEyePath: 'M 165,115 L 165,75 A 15,35 0 0,1 195,75 L 195,115 Z',
-                icon: ''
             },
             love: {
                 color: '#E87AF2',
                 mouthPath: 'M 60 130 Q 100 145 140 130',
-                leftEyePath: 'M 5,110 L 5,80 A 15,30 0 0,1 35,80 L 35,110 Z',
-                rightEyePath: 'M 165,110 L 165,80 A 15,30 0 0,1 195,80 L 195,110 Z',
-                icon: '<path d="M20,10 C10,0 0,10 0,15 C0,25 10,30 10,30 C10,30 20,25 20,15 C20,10 10,0 10,10 Z" transform="translate(7, 80)" fill="#E87AF2"/>'
+                leftEyePath: 'M 10,130 C -20,85 -20,20 10,60 C 40,20 40,85 10,130 Z',
+                rightEyePath: 'M 190,130 C 160,85 160,20 190,60 C 220,20 220,85 190,130 Z',
             },
             dizzy: {
                 color: '#9B59B6',
                 mouthPath: 'M 60 135 Q 80 125, 100 135 T 140 135',
-                leftEyePath: 'M 5,110 L 5,80 A 15,30 0 0,1 35,80 L 35,110 Z',
-                rightEyePath: 'M 165,110 L 165,80 A 15,30 0 0,1 195,80 L 195,110 Z',
-                icon: '<path d="M15,15 m-10,0 a10,10 0 1,0 20,0 a10,10 0 1,0 -20,0 M15,15 m-6,0 a6,6 0 1,0 12,0 a6,6 0 1,0 -12,0" transform="translate(5, 80)" stroke-width="2.5" stroke="#fff" fill="none"/>'
+                leftEyePath: 'M 20,95 m -18,0 a18,18 0 1,1 36,0 a12,12 0 1,1 -24,0 a6,6 0 1,1 12,0',
+                rightEyePath: 'M 180,95 m -18,0 a18,18 0 1,1 36,0 a12,12 0 1,1 -24,0 a6,6 0 1,1 12,0',
             },
             thinking: {
                 color: '#3498DB',
                 mouthPath: 'M 70 135 L 130 125',
                 leftEyePath: 'M 15,110 L 15,80 A 15,30 0 0,1 45,80 L 45,110 Z',
                 rightEyePath: 'M 175,110 L 175,80 A 15,30 0 0,1 205,80 L 205,110 Z',
-                icon: ''
             },
             sleepy: {
                 color: '#95A5A6',
                 mouthPath: 'M 95 135 A 5 5 0 1 0 105 135 A 5 5 0 1 0 95 135 Z',
                 leftEyePath: 'M 5,110 A 15,30 0 0,1 35,110',
                 rightEyePath: 'M 165,110 A 15,30 0 0,1 195,110',
-                icon: ''
             },
+            wink: {
+                color: '#FFB84D',
+                mouthPath: 'M 60 130 Q 100 135 140 125',
+                leftEyePath: 'M 5,110 L 5,80 A 15,30 0 0,1 35,80 L 35,110 Z',
+                rightEyePath: 'M 160,80 A 15,5 0 0,1 195,80',
+            },
+
             listening: {
                 color: '#40D4D6'
             }
