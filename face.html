@@ -141,6 +141,11 @@
             <button onclick="setExpression('thinking')">Thinking</button>
             <button onclick="setExpression('sleepy')">Sleepy</button>
             <button onclick="setExpression('wink')">Wink</button>
+            <button onclick="setExpression('scared')">Scared</button>
+            <button onclick="setExpression('confused')">Confused</button>
+            <button onclick="setExpression('sick')">Sick</button>
+            <button onclick="setExpression('innocent')">Innocent</button>
+            <button onclick="setExpression('worried')">Worried</button>
             <button onclick="setExpression('listening')">Listen</button>
         </div>
         
@@ -242,7 +247,36 @@
                 leftEyePath: 'M 5,110 L 5,80 A 15,30 0 0,1 35,80 L 35,110 Z',
                 rightEyePath: 'M 160,80 A 15,5 0 0,1 195,80',
             },
-
+            scared: {
+                color: '#A8E6CF',
+                mouthPath: 'M 80 145 L 95 135 L 110 145 L 125 135 L 140 145',
+                leftEyePath: 'M 5,115 L 5,75 A 15,35 0 0,1 35,75 L 35,115 Z',
+                rightEyePath: 'M 165,115 L 165,75 A 15,35 0 0,1 195,75 L 195,115 Z',
+            },
+            confused: {
+                color: '#BCA0DC',
+                mouthPath: 'M 70 135 Q 90 145, 110 135 T 140 140',
+                leftEyePath: 'M 5,110 L 5,80 A 15,30 0 0,1 35,80 L 35,110 Z',
+                rightEyePath: 'M 165,80 A 15,40 0 0,0 195,80',
+            },
+            sick: {
+                color: '#88B04B',
+                mouthPath: 'M 70 140 C 90 120, 110 150, 130 130',
+                leftEyePath: 'M 5,100 L 35,50 L 35,110 L 5,110 Z',
+                rightEyePath: 'M 165,85 L 195,80 L 195,110 L 165,110 Z'
+            },
+            innocent: {
+                color: '#E0E0E0',
+                mouthPath: 'M 90 135 Q 100 140 110 135',
+                leftEyePath: 'M 5,115 L 5,75 A 15,35 0 0,1 35,75 L 35,115 Z',
+                rightEyePath: 'M 165,115 L 165,75 A 15,35 0 0,1 195,75 L 195,115 Z'
+            },
+            worried: {
+                color: '#7f8c8d',
+                mouthPath: 'M 60 145 Q 100 135 140 145',
+                leftEyePath: 'M 5,80 L 35,60 L 35,110 L 5,110 Z',
+                rightEyePath: 'M 165,60 L 195,80 L 195,110 L 165,110 Z'
+            },
             listening: {
                 color: '#40D4D6'
             }
