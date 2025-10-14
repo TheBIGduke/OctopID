@@ -2,60 +2,99 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="OctopID" content="width=device-width, initial scale=1.0">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
     <title>OctopID</title>
+    
     <style>
+        /* The 'body' selector targets the <body> element of the page. */
         body {
+            /* Flexbox is a layout model that allows items to be aligned and distributed within a container. */
             display: flex;
+            /* 'justify-content' aligns flex items along the main axis (horizontally, in this case). 'center' places them in the middle. */
             justify-content: center;
+            /* 'align-items' aligns flex items along the cross axis (vertically). 'center' places them in the middle. */
             align-items: center;
+            /* 'vh' stands for "viewport height". '100vh' makes the body's height equal to 100% of the viewport's height. */
             height: 100vh;
+            /* Sets the background color of the page. */
             background-color: black;
+            /* Removes the default margin that browsers apply to the body, ensuring the content fills the entire space. */
             margin: 0;
+            /* Sets the default font for the text on the page. */
             font-family: sans-serif;
+            /* Sets the default text color. */
             color: white;
         }
+
+        /* The '.container' class selector targets any element with class="container". */
         .container {
+            /* Aligns the inline contents (like text) of the container to the center. */
             text-align: center;
         }
+
+        /* The '#face' ID selector targets the element with id="face". */
         #face {
+            /* Sets a fixed width and height for the SVG container. */
             width: 300px;
             height: 300px;
         }
+
+        /* The '.eye' class selector targets the eye elements. */
         .eye {
-            /* For smooth blinking animation */
+            /* 'transition' enables smooth animations between CSS property changes. */
+            /* Here, any change to the 'transform' property will take 0.1 seconds with an 'ease-out' timing function (starts fast, then slows). */
             transition: transform 0.1s ease-out;
+            /* 'transform-origin' sets the point around which a transformation is applied. 'center' ensures scaling or rotation happens from the middle of the eye. */
             transform-origin: center;
         }
+
+        /* The '#mouth' ID selector targets the mouth path. */
         #mouth {
+            /* This transition animates the 'd' attribute of the SVG path. */
+            /* The 'd' attribute defines the shape of the path, so changing it can animate the mouth's expression. */
+            /* 'linear' means the animation occurs at a constant speed. */
             transition: d 0.1s linear;
         }
+
+        /* The '#status' ID selector targets the status text display. */
         #status {
+            /* Adds 20 pixels of space above the element. */
             margin-top: 20px;
+            /* Sets the font size. 'em' is a relative unit, meaning 1.2 times the size of the parent element's font. */
             font-size: 1.2em;
-            color: #bdc3c7
+            /* Sets a specific light grey color for the text. */
+            color: #bdc3c7;
         }
     </style>
 </head>
 <body>
     <div class="container">
+        
         <svg id="face" viewBox="0 0 200 200">
+            
             <g class="eye" id="left-eye">
                 <path d="M 5,110 L 5,80 A 15,30 0 0,1 35,80 L 35,110 Z" fill="#40D4D6"/>
             </g>
+            
             <g class="eye" id="right-eye">
                 <path d="M 165,110 L 165,80 A 15,30 0 0,1 195,80 L 195,110 Z" fill="#40D4D6"/>
             </g>
+            
             <path
                 id="mouth"
                 d="M 60 130 L 140 130"
-                stroke="#40D4D6"
-                stroke-width="5"
-                fill="transparent"
-                stroke-linecap="round"/>
+                stroke="#40D4D6"        /* 'stroke' defines the color of the line. */
+                stroke-width="5"        /* 'stroke-width' defines the thickness of the line. */
+                fill="transparent"      /* Since this is a line, not a shape, the fill is transparent. */
+                stroke-linecap="round"  /* 'stroke-linecap' makes the ends of the line rounded instead of flat. */
+            />
         </svg>
+        
         <div id="status">Connecting to server...</div>
     </div>
+    
     <script src="main.js"></script>
 </body>
 </html>
