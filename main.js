@@ -2,6 +2,8 @@ window.addEventListener('DOMContentLoaded', () => {
     const face = document.getElementById('face');
     const mouth = document.getElementById('mouth');
     const eyes = document.querySelectorAll('.eye');
+    const pupils = document.querySelectorAll('.pupil');
+    const pupilHighlights = document.querySelectorAll('.pupil-highlight'); // Select the highlights
     const statusDiv = document.getElementById('status');
     const serverAddress = 'ws://localhost:1940';
 
@@ -13,32 +15,45 @@ window.addEventListener('DOMContentLoaded', () => {
     // --- Blinking Animation ---
     const blink = () => {
         eyes.forEach(eye => {
-            eye.setAttribute('ry', '1');
+            eye.style.transform = 'scaleY(0.1)';
         });
         setTimeout(() => {
-            // Only return to normal size if not in the "wide-eyed" state
             if (!isWideEyed) {
                 eyes.forEach(eye => {
-                    eye.setAttribute('ry', '15');
+                    eye.style.transform = 'scaleY(1)';
                 });
             }
         }, 150);
     };
     setInterval(blink, Math.random() * 5000 + 2000);
 
-    // --- Eye Panning Animation ---
+    // --- Eye Panning Animation (pupils and highlights) ---
     const panEyes = () => {
-        const panX = Math.random() * 10 - 5;
-        const panY = Math.random() * 6 - 3;
-        eyes.forEach(eye => {
-            const originalCx = eye.getAttribute('data-original-cx') || eye.getAttribute('cx');
-            const originalCy = eye.getAttribute('data-original-cy') || eye.getAttribute('cy');
-            if (!eye.getAttribute('data-original-cx')) {
-                eye.setAttribute('data-original-cx', originalCx);
-                eye.setAttribute('data-original-cy', originalCy);
+        const panX = Math.random() * 8 - 4;
+        const panY = Math.random() * 10 - 5;
+
+        // Move Pupils
+        pupils.forEach(pupil => {
+            const originalCx = pupil.getAttribute('data-original-cx') || pupil.getAttribute('cx');
+            const originalCy = pupil.getAttribute('data-original-cy') || pupil.getAttribute('cy');
+            if (!pupil.getAttribute('data-original-cx')) {
+                pupil.setAttribute('data-original-cx', originalCx);
+                pupil.setAttribute('data-original-cy', originalCy);
             }
-            eye.setAttribute('cx', parseFloat(originalCx) + panX);
-            eye.setAttribute('cy', parseFloat(originalCy) + panY);
+            pupil.setAttribute('cx', parseFloat(originalCx) + panX);
+            pupil.setAttribute('cy', parseFloat(originalCy) + panY);
+        });
+
+        // Move Highlights
+        pupilHighlights.forEach(highlight => {
+            const originalCx = highlight.getAttribute('data-original-cx') || highlight.getAttribute('cx');
+            const originalCy = highlight.getAttribute('data-original-cy') || highlight.getAttribute('cy');
+            if (!highlight.getAttribute('data-original-cx')) {
+                highlight.setAttribute('data-original-cx', originalCx);
+                highlight.setAttribute('data-original-cy', originalCy);
+            }
+            highlight.setAttribute('cx', parseFloat(originalCx) + panX);
+            highlight.setAttribute('cy', parseFloat(originalCy) + panY);
         });
     };
     setInterval(panEyes, Math.random() * 4000 + 3000);
