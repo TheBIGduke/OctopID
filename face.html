@@ -9,10 +9,10 @@
         :root {
             --face-color: #40D4D6;
             --background-color: black;
-            --text-color: #f0f0f0;
-            --button-bg: #2c2c2c;
-            --button-hover-bg: #3c3c3c;
-            --shadow-color: rgba(0, 0, 0, 0.2);
+            --text-color: #f0f0f0; /* Kept for potential future use or consistency */
+            --button-bg: #2c2c2c; /* Kept for potential future use or consistency */
+            --button-hover-bg: #3c3c3c; /* Kept for potential future use or consistency */
+            --shadow-color: rgba(0, 0, 0, 0.2); /* Kept for potential future use or consistency */
         }
 
         body {
@@ -24,8 +24,8 @@
             background-color: var(--background-color);
             margin: 0;
             font-family: 'Inter', sans-serif;
-            color: var(--text-color);
-            padding: 20px;
+            color: var(--text-color); /* This will no longer be visible after removing #status */
+            /* Removed padding: 20px; to allow face to be even bigger */
             box-sizing: border-box;
         }
 
@@ -35,17 +35,20 @@
             align-items: center;
             justify-content: center;
             width: 100%;
-            max-width: 600px;
+            /* Increased max-width significantly for a much bigger face */
+            max-width: 900px; /* Adjust this value as needed for your screen */
+            /* Added flex-grow to ensure it takes available space */
+            flex-grow: 1;
         }
 
         #face {
             width: 100%;
-            height: auto;
+            height: auto; /* Maintain aspect ratio */
             overflow: visible;
         }
 
         .eye-background, .eye-icon-container path {
-            transition: d 0.3s ease-in-out, fill 0.3s ease-in-out, 
+            transition: d 0.3s ease-in-out, fill 0.3s ease-in-out,
                         stroke 0.3s ease-in-out, transform 0.3s ease-in-out;
             transform-origin: center;
         }
@@ -64,38 +67,34 @@
 <body>
     <div class="container">
         <svg id="face" viewBox="0 0 200 200">
-            
-            <!-- LEFT EYE GROUP -->
+
             <g class="eye" id="left-eye">
                 <path class="eye-background" d="M 5,110 L 5,80 A 15,30 0 0,1 35,80 L 35,110 Z" />
                 <g class="eye-icon-container"></g>
             </g>
 
-            <!-- RIGHT EYE GROUP -->
             <g class="eye" id="right-eye">
                 <path class="eye-background" d="M 165,110 L 165,80 A 15,30 0 0,1 195,80 L 195,110 Z" />
                 <g class="eye-icon-container"></g>
             </g>
 
-            <!-- MOUTH PATH -->
             <path
                 id="mouth"
                 stroke-width="5"
                 fill="transparent"
                 stroke-linecap="round"/>
         </svg>
-        
-        <div id="status">Connecting to audio server...</div>
-    </div>
 
-    <script>        
+        </div>
+
+    <script>
         const mouth = document.getElementById('mouth');
         const leftEye = document.querySelector('#left-eye .eye-background');
         const rightEye = document.querySelector('#right-eye .eye-background');
         const eyes = document.querySelectorAll('.eye');
         const leftEyeIcon = document.querySelector('#left-eye .eye-icon-container');
         const rightEyeIcon = document.querySelector('#right-eye .eye-icon-container');
-        const statusDiv = document.getElementById('status');
+        // Removed reference to statusDiv: const statusDiv = document.getElementById('status');
         const root = document.documentElement;
 
         let currentMood = 'neutral';
@@ -116,16 +115,16 @@
             if (['sleepy', 'wink', 'dizzy', 'love'].includes(currentMood)) {
                 return;
             }
-            
+
             currentPanX = Math.random() * 20 - 10;
             currentPanY = Math.random() * 12 - 6;
-            
+
             eyes.forEach(eye => {
                 eye.style.transform = `translate(${currentPanX}px, ${currentPanY}px) scaleY(1)`;
             });
         };
         setInterval(panEyes, Math.random() * 4000 + 3000);
-        
+
         /* ====================================================================
            EYE ANIMATION - BLINKING
            ==================================================================== */
@@ -133,12 +132,12 @@
             if (isWideEyed || ['sleepy', 'wink'].includes(currentMood)) return;
 
             const blinkTransitionSpeed = '0.1s';
-            
+
             eyes.forEach(eye => {
                 eye.style.transitionDuration = blinkTransitionSpeed;
                 eye.style.transform = `translate(${currentPanX}px, ${currentPanY}px) scaleY(0.1)`;
             });
-            
+
             setTimeout(() => {
                 if (!isWideEyed) {
                     eyes.forEach(eye => {
@@ -160,98 +159,98 @@
                 leftEyePath: 'M 5,110 L 5,80 A 15,30 0 0,1 35,80 L 35,110 Z',
                 rightEyePath: 'M 165,110 L 165,80 A 15,30 0 0,1 195,80 L 195,110 Z',
             },
-            
+
             happy: {
                 color: '#6AF2A0',
                 mouthPath: 'M 60 130 Q 100 150 140 130',
                 leftEyePath: 'M 5,100 A 15,40 0 0,1 35,100',
                 rightEyePath: 'M 165,100 A 15,40 0 0,1 195,100',
             },
-            
+
             sad: {
                 color: '#5B8DEF',
                 mouthPath: 'M 60 140 Q 100 120 140 140',
                 leftEyePath: 'M 5,90 A 15,40 0 0,0 35,90',
                 rightEyePath: 'M 165,90 A 15,40 0 0,0 195,90',
             },
-            
+
             angry: {
                 color: '#E74C3C',
                 mouthPath: 'M 60 140 L 140 140',
                 leftEyePath: 'M 5,60 L 35,80 L 35,110 L 5,110 Z',
                 rightEyePath: 'M 165,75 L 195,60 L 195,110 L 165,110 Z',
             },
-            
+
             surprised: {
                 color: '#F1C40F',
                 mouthPath: 'M 90 130 A 10 15 0 1 0 110 130 A 10 15 0 1 0 90 130 Z',
                 leftEyePath: 'M 5,115 L 5,75 A 15,35 0 0,1 35,75 L 35,115 Z',
                 rightEyePath: 'M 165,115 L 165,75 A 15,35 0 0,1 195,75 L 195,115 Z',
             },
-            
+
             love: {
                 color: '#E87AF2',
                 mouthPath: 'M 60 130 Q 100 145 140 130',
                 leftEyePath: 'M 10,130 C -20,85 -20,20 10,60 C 40,20 40,85 10,130 Z',
                 rightEyePath: 'M 190,130 C 160,85 160,20 190,60 C 220,20 220,85 190,130 Z',
             },
-            
+
             dizzy: {
                 color: '#9B59B6',
                 mouthPath: 'M 60 135 Q 80 125, 100 135 T 140 135',
                 leftEyePath: 'M 20,95 m -18,0 a18,18 0 1,1 36,0 a12,12 0 1,1 -24,0 a6,6 0 1,1 12,0',
                 rightEyePath: 'M 180,95 m -18,0 a18,18 0 1,1 36,0 a12,12 0 1,1 -24,0 a6,6 0 1,1 12,0',
             },
-            
+
             thinking: {
                 color: '#3498DB',
                 mouthPath: 'M 70 135 L 130 125',
                 leftEyePath: 'M 15,110 L 15,80 A 15,30 0 0,1 45,80 L 45,110 Z',
                 rightEyePath: 'M 175,110 L 175,80 A 15,30 0 0,1 205,80 L 205,110 Z',
             },
-            
+
             sleepy: {
                 color: '#95A5A6',
                 mouthPath: 'M 95 135 A 5 5 0 1 0 105 135 A 5 5 0 1 0 95 135 Z',
                 leftEyePath: 'M 5,110 A 15,30 0 0,1 35,110',
                 rightEyePath: 'M 165,110 A 15,30 0 0,1 195,110',
             },
-            
+
             wink: {
                 color: '#FFB84D',
                 mouthPath: 'M 60 130 Q 100 135 140 125',
                 leftEyePath: 'M 5,110 L 5,80 A 15,30 0 0,1 35,80 L 35,110 Z',
                 rightEyePath: 'M 160,80 A 15,5 0 0,1 195,80',
             },
-            
+
             scared: {
                 color: '#A8E6CF',
                 mouthPath: 'M 80 145 L 95 135 L 110 145 L 125 135 L 140 145',
                 leftEyePath: 'M 5,115 L 5,75 A 15,35 0 0,1 35,75 L 35,115 Z',
                 rightEyePath: 'M 165,115 L 165,75 A 15,35 0 0,1 195,75 L 195,115 Z',
             },
-            
+
             confused: {
                 color: '#BCA0DC',
                 mouthPath: 'M 70 135 Q 90 145, 110 135 T 140 140',
                 leftEyePath: 'M 5,110 L 5,80 A 15,30 0 0,1 35,80 L 35,110 Z',
                 rightEyePath: 'M 165,80 A 15,40 0 0,0 195,80',
             },
-            
+
             sick: {
                 color: '#88B04B',
                 mouthPath: 'M 70 140 C 90 120, 110 150, 130 130',
                 leftEyePath: 'M 5,100 L 35,50 L 35,110 L 5,110 Z',
                 rightEyePath: 'M 165,85 L 195,80 L 195,110 L 165,110 Z',
             },
-            
+
             innocent: {
                 color: '#E0E0E0',
                 mouthPath: 'M 90 135 Q 100 140 110 135',
                 leftEyePath: 'M 5,115 L 5,75 A 15,35 0 0,1 35,75 L 35,115 Z',
                 rightEyePath: 'M 165,115 L 165,75 A 15,35 0 0,1 195,75 L 195,115 Z',
             },
-            
+
             worried: {
                 color: '#7f8c8d',
                 mouthPath: 'M 60 145 Q 100 135 140 145',
@@ -279,23 +278,23 @@
             if (!expr) return;
 
             root.style.setProperty('--face-color', expr.color);
-            
+
             mouth.setAttribute('stroke', 'var(--face-color)');
             mouth.setAttribute('d', expr.mouthPath);
-            
+
             leftEye.setAttribute('fill', 'var(--face-color)');
             leftEye.setAttribute('d', expr.leftEyePath);
-            
+
             rightEye.setAttribute('fill', 'var(--face-color)');
             rightEye.setAttribute('d', expr.rightEyePath);
 
             if (expr.icon) {
                 leftEyeIcon.innerHTML = expr.icon;
                 rightEyeIcon.innerHTML = expr.icon;
-                leftEyeIcon.querySelectorAll('path').forEach(p => { 
+                leftEyeIcon.querySelectorAll('path').forEach(p => {
                     if (p.getAttribute('fill') !== 'none') p.setAttribute('fill', expr.color);
                 });
-                rightEyeIcon.querySelectorAll('path').forEach(p => { 
+                rightEyeIcon.querySelectorAll('path').forEach(p => {
                     if (p.getAttribute('fill') !== 'none') p.setAttribute('fill', expr.color);
                 });
             } else {
@@ -303,7 +302,7 @@
                 rightEyeIcon.innerHTML = '';
             }
 
-            statusDiv.textContent = `Current mood: ${name} | Listening...`;
+            // Removed: statusDiv.textContent = `Current mood: ${name} | Listening...`;
         }
 
         /* ====================================================================
@@ -315,15 +314,15 @@
 
             webSocket.onopen = () => {
                 console.log('Successfully connected to the WebSocket server');
-                statusDiv.textContent = 'Connected! Listening to audio...';
-                
+                // Removed: statusDiv.textContent = 'Connected! Listening to audio...';
+
                 // Initialize mouth state
                 targetMouthPath = moods.neutral.mouthPath;
                 currentMouthPath = moods.neutral.mouthPath;
 
                 webSocket.onmessage = (event) => {
                     const data = JSON.parse(event.data);
-                    
+
                     // Handle different message types
                     if (data.type === 'audio') {
                         // Audio data for mouth animation
@@ -351,14 +350,14 @@
 
             webSocket.onclose = () => {
                 console.log('Disconnected from the WebSocket server');
-                statusDiv.textContent = 'Disconnected. Reconnecting...';
+                // Removed: statusDiv.textContent = 'Disconnected. Reconnecting...';
                 // Auto-reconnect after 3 seconds
                 setTimeout(connectWebSocket, 3000);
             };
 
             webSocket.onerror = (error) => {
                 console.error('WebSocket error:', error);
-                statusDiv.textContent = 'Connection Error. Is the Python server running?';
+                // Removed: statusDiv.textContent = 'Connection Error. Is the Python server running?';
             };
         }
 
@@ -371,7 +370,7 @@
                 audioAnimationId = requestAnimationFrame(animateMouth);
                 return;
             }
-            
+
             const currentPoints = (currentMouthPath.match(/[-+]?[0-9]*\.?[0-9]+/g) || []).map(Number);
             const targetPoints = (targetMouthPath.match(/[-+]?[0-9]*\.?[0-9]+/g) || []).map(Number);
             let newPath;
@@ -379,10 +378,10 @@
             if (currentPoints.length !== targetPoints.length) {
                 newPath = targetMouthPath;
             } else {
-                const newPoints = currentPoints.map((point, i) => 
+                const newPoints = currentPoints.map((point, i) =>
                     point + (targetPoints[i] - point) * 0.3
                 );
-                
+
                 if (newPoints.length === 4) {
                     newPath = `M ${newPoints[0]} ${newPoints[1]} L ${newPoints[2]} ${newPoints[3]}`;
                 } else if (newPoints.length === 9) {
@@ -391,10 +390,10 @@
                     newPath = targetMouthPath;
                 }
             }
-            
+
             currentMouthPath = newPath;
             mouth.setAttribute('d', newPath);
-            
+
             audioAnimationId = requestAnimationFrame(animateMouth);
         };
 
