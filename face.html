@@ -9,10 +9,7 @@
         :root {
             --face-color: #40D4D6;
             --background-color: black;
-            --text-color: #f0f0f0; /* Kept for potential future use or consistency */
-            --button-bg: #2c2c2c; /* Kept for potential future use or consistency */
-            --button-hover-bg: #3c3c3c; /* Kept for potential future use or consistency */
-            --shadow-color: rgba(0, 0, 0, 0.2); /* Kept for potential future use or consistency */
+            --text-color: #f0f0f0;
         }
 
         body {
@@ -24,8 +21,7 @@
             background-color: var(--background-color);
             margin: 0;
             font-family: 'Inter', sans-serif;
-            color: var(--text-color); /* This will no longer be visible after removing #status */
-            /* Removed padding: 20px; to allow face to be even bigger */
+            color: var(--text-color);
             box-sizing: border-box;
         }
 
@@ -35,15 +31,13 @@
             align-items: center;
             justify-content: center;
             width: 100%;
-            /* Increased max-width significantly for a much bigger face */
-            max-width: 900px; /* Adjust this value as needed for your screen */
-            /* Added flex-grow to ensure it takes available space */
+            /* MODIFICATION: Removed max-width to allow the container to fill the screen width */
             flex-grow: 1;
         }
 
         #face {
             width: 100%;
-            height: auto; /* Maintain aspect ratio */
+            height: auto;
             overflow: visible;
         }
 
@@ -66,26 +60,27 @@
 </head>
 <body>
     <div class="container">
-        <svg id="face" viewBox="0 0 200 200">
+        <svg id="face" viewBox="0 0 356 200">
+            <g transform="translate(78, 0)">
 
-            <g class="eye" id="left-eye">
-                <path class="eye-background" d="M 5,110 L 5,80 A 15,30 0 0,1 35,80 L 35,110 Z" />
-                <g class="eye-icon-container"></g>
-            </g>
+                <g class="eye" id="left-eye">
+                    <path class="eye-background" d="M 5,110 L 5,80 A 15,30 0 0,1 35,80 L 35,110 Z" />
+                    <g class="eye-icon-container"></g>
+                </g>
 
-            <g class="eye" id="right-eye">
-                <path class="eye-background" d="M 165,110 L 165,80 A 15,30 0 0,1 195,80 L 195,110 Z" />
-                <g class="eye-icon-container"></g>
-            </g>
+                <g class="eye" id="right-eye">
+                    <path class="eye-background" d="M 165,110 L 165,80 A 15,30 0 0,1 195,80 L 195,110 Z" />
+                    <g class="eye-icon-container"></g>
+                </g>
 
-            <path
-                id="mouth"
-                stroke-width="5"
-                fill="transparent"
-                stroke-linecap="round"/>
-        </svg>
+                <path
+                    id="mouth"
+                    stroke-width="5"
+                    fill="transparent"
+                    stroke-linecap="round"/>
 
-        </div>
+            </g> </svg>
+    </div>
 
     <script>
         const mouth = document.getElementById('mouth');
@@ -94,7 +89,6 @@
         const eyes = document.querySelectorAll('.eye');
         const leftEyeIcon = document.querySelector('#left-eye .eye-icon-container');
         const rightEyeIcon = document.querySelector('#right-eye .eye-icon-container');
-        // Removed reference to statusDiv: const statusDiv = document.getElementById('status');
         const root = document.documentElement;
 
         let currentMood = 'neutral';
@@ -104,7 +98,6 @@
         let currentPanX = 0;
         let currentPanY = 0;
 
-        // Audio animation state
         let targetMouthPath = '';
         let currentMouthPath = '';
 
@@ -263,7 +256,6 @@
            CORE FUNCTION - setMood()
            ==================================================================== */
         function setMood(name) {
-            // Smooth transition
             currentPanX = 0;
             currentPanY = 0;
             eyes.forEach(eye => {
@@ -301,8 +293,6 @@
                 leftEyeIcon.innerHTML = '';
                 rightEyeIcon.innerHTML = '';
             }
-
-            // Removed: statusDiv.textContent = `Current mood: ${name} | Listening...`;
         }
 
         /* ====================================================================
@@ -314,18 +304,13 @@
 
             webSocket.onopen = () => {
                 console.log('Successfully connected to the WebSocket server');
-                // Removed: statusDiv.textContent = 'Connected! Listening to audio...';
-
-                // Initialize mouth state
                 targetMouthPath = moods.neutral.mouthPath;
                 currentMouthPath = moods.neutral.mouthPath;
 
                 webSocket.onmessage = (event) => {
                     const data = JSON.parse(event.data);
 
-                    // Handle different message types
                     if (data.type === 'audio') {
-                        // Audio data for mouth animation
                         const bassLevel = data.bass;
                         const talkingThreshold = 0.1;
 
@@ -338,26 +323,20 @@
                             mouth.style.fill = 'transparent';
                         }
                     } else if (data.type === 'mood') {
-                        // Mood change command from server
                         console.log(`Received mood command: ${data.mood}`);
                         setMood(data.mood);
                     }
                 };
-
-                // Start mouth animation loop
                 animateMouth();
             };
 
             webSocket.onclose = () => {
                 console.log('Disconnected from the WebSocket server');
-                // Removed: statusDiv.textContent = 'Disconnected. Reconnecting...';
-                // Auto-reconnect after 3 seconds
                 setTimeout(connectWebSocket, 3000);
             };
 
             webSocket.onerror = (error) => {
                 console.error('WebSocket error:', error);
-                // Removed: statusDiv.textContent = 'Connection Error. Is the Python server running?';
             };
         }
 
@@ -366,7 +345,6 @@
            ==================================================================== */
         const animateMouth = () => {
             if (!webSocket || webSocket.readyState !== WebSocket.OPEN) {
-                // Retry if connection drops
                 audioAnimationId = requestAnimationFrame(animateMouth);
                 return;
             }
@@ -390,14 +368,11 @@
                     newPath = targetMouthPath;
                 }
             }
-
             currentMouthPath = newPath;
             mouth.setAttribute('d', newPath);
-
             audioAnimationId = requestAnimationFrame(animateMouth);
         };
 
-        // Auto-connect on page load
         window.addEventListener('DOMContentLoaded', () => {
             setMood('neutral');
             connectWebSocket();
