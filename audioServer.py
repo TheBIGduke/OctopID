@@ -4,113 +4,163 @@ import websockets
 import soundcard as sc
 import numpy as np
 from collections import deque
+import threading
+import time
+import sys
 
-# Audio capture settings
-sampleRate = 44100      # Samples per second
-chunkSize = 1024        # Samples per analysis chunk
+# Central list of all valid moods
+AVAILABLE_MOODS = (
+    'neutral', 'happy', 'sad', 'angry', 'surprised', 'love', 'dizzy',
+    'thinking', 'sleepy', 'wink', 'scared', 'confused', 'sick',
+    'innocent', 'worried'
+)
 
-# Frequency ranges for analysis (optimized for Spanish)
-bassRangeStart = 60
-bassRangeEnd = 250
-midRangeStart = 251
-midRangeEnd = 2000      # Core human voice range
-highRangeStart = 2001
-highRangeEnd = 6000
+# --- Global state trackers ---
+ACTIVE_CONNECTIONS = set()
+initial_connection_made = False
+
+# --- Audio settings ---
+sampleRate = 44100
+chunkSize = 1024
+bassRangeStart, bassRangeEnd = 60, 250
+midRangeStart, midRangeEnd = 251, 2000
+highRangeStart, highRangeEnd = 2001, 6000
 
 
 async def audioStreamHandler(websocket):
     """
-    Handles WebSocket connection: captures audio, analyzes frequencies,
-    sends real-time audio data to client, and can send expression commands.
+    Handles a new client connection. Sets the global state and starts the
+    audio processing loop, ensuring silent clean-up on disconnection.
     """
-    
-    print("Client connected --- Starting audio stream...")
-    
-    # Store last 5 bass values for smoothing (prevents jitter)
-    bass_history = deque(maxlen=5)
-    
+    global initial_connection_made
+    if not initial_connection_made:
+        initial_connection_made = True
+
+    ACTIVE_CONNECTIONS.add(websocket)
     try:
-        # Capture system audio from speaker
+        await process_audio(websocket)
+    finally:
+        # Silently remove the connection. The terminal loop handles all UI.
+        if websocket in ACTIVE_CONNECTIONS:
+            ACTIVE_CONNECTIONS.remove(websocket)
+
+
+async def process_audio(websocket):
+    """
+    Captures system audio, performs FFT analysis, and sends the frequency
+    data to a connected client in a continuous loop.
+    """
+    bass_history = deque(maxlen=5)
+    try:
         with sc.get_microphone(
             id=str(sc.default_speaker().name),
             include_loopback=True
         ).recorder(samplerate=sampleRate, channels=1) as mic:
-            
             while True:
-                # Capture audio chunk
                 data = mic.record(numframes=chunkSize)
-                if data.size == 0:
-                    continue
-                
-                # Convert to frequency domain (FFT analysis)
+                if data.size == 0: continue
+
+                # --- Frequency Analysis & Processing ---
                 fftData = np.fft.rfft(data[:, 0])
                 fftFreq = np.fft.rfftfreq(len(data[:, 0]), 1.0 / sampleRate)
-                
-                # Find which frequencies fall into each range
                 bassIndices = np.where((fftFreq >= bassRangeStart) & (fftFreq <= bassRangeEnd))
                 midIndices = np.where((fftFreq >= midRangeStart) & (fftFreq <= midRangeEnd))
                 highIndices = np.where((fftFreq >= highRangeStart) & (fftFreq <= highRangeEnd))
-                
-                # Calculate energy (magnitude) in each frequency band
                 bassEnergy = np.mean(np.abs(fftData[bassIndices])) if bassIndices[0].size > 0 else 0
                 midEnergy = np.mean(np.abs(fftData[midIndices])) if midIndices[0].size > 0 else 0
                 highEnergy = np.mean(np.abs(fftData[highIndices])) if highIndices[0].size > 0 else 0
-                
-                # Normalize to 0-1 scale (divisors tuned for sensitivity)
                 normalizedBass = min(bassEnergy / 30.0, 1.0)
                 normalizedMids = min(midEnergy / 20.0, 1.0)
                 normalizedHighs = min(highEnergy / 35.0, 1.0)
-                
-                # Smooth bass to reduce animation jitter
                 bass_history.append(normalizedBass)
                 smoothed_bass = np.mean(bass_history)
                 
-                # Send audio features to client
-                payload = {
-                    "type": "audio",
-                    "bass": smoothed_bass,
-                    "mids": normalizedMids,
-                    "highs": normalizedHighs
-                }
+                payload = {"type": "audio", "bass": smoothed_bass, "mids": normalizedMids, "highs": normalizedHighs}
                 await websocket.send(json.dumps(payload))
                 await asyncio.sleep(0.01)
-                
+
     except websockets.exceptions.ConnectionClosed:
-        print("Client disconnected")
-    except Exception as e:
-        print(f"Error: {e}")
+        # Catch any disconnection error silently.
+        pass
 
 
-# Helper function to send expression change from anywhere in your code
-async def sendExpression(websocket, expression_name):
+async def sendMood(websocket, mood_name):
+    """Formats and sends a mood command to a client."""
+    try:
+        payload = {"type": "mood", "mood": mood_name}
+        await websocket.send(json.dumps(payload))
+        print(f"--> Sent command: '{mood_name}'")
+    except websockets.exceptions.ConnectionClosed:
+        pass
+
+
+def terminal_input_loop(loop):
     """
-    Send an expression change command to the connected client.
-    
-    Args:
-        websocket: The active WebSocket connection
-        expression_name: String name of the expression (e.g., 'happy', 'sad', 'angry')
-    
-    Available expressions:
-        'neutral', 'happy', 'sad', 'angry', 'surprised', 'love', 'dizzy',
-        'thinking', 'sleepy', 'wink', 'scared', 'confused', 'sick', 
-        'innocent', 'worried'
+    Runs in a background thread to provide a robust command-line interface.
+    This function is the single source of truth for all status messages.
     """
-    payload = {
-        "type": "expression",
-        "expression": expression_name
-    }
-    await websocket.send(json.dumps(payload))
-    print(f"Sent expression command: {expression_name}")
+    options_text = ", ".join(AVAILABLE_MOODS)
+    loader_chars = ['|', '/', '-', '\\']
+
+    while True:
+        # --- 1. Wait for a connection and display loading/reconnecting screen ---
+        if not ACTIVE_CONNECTIONS:
+            i = 0
+            message = "Connection lost. Reconnecting... " if initial_connection_made else "Waiting for client connection... "
+            # Clear the line where input might have been, in case of a disconnect
+            sys.stdout.write("\r" + " " * 80 + "\r")
+            while not ACTIVE_CONNECTIONS:
+                print(f"\r{message}{loader_chars[i % len(loader_chars)]}", end="")
+                sys.stdout.flush()
+                i += 1
+                time.sleep(0.2)
+
+            print(f"\rClient connected! You can now send moods.")
+            print("\n--- Available Moods ---")
+            print(options_text)
+        
+        # --- 2. Get user input ---
+        mood_name = input("Enter mood to send: ").strip().lower()
+
+        # --- 3. This is the crucial fix for a disconnect during input() ---
+        if not ACTIVE_CONNECTIONS:
+            continue 
+
+        if not mood_name:
+            print("\n--- Available Moods ---")
+            print(options_text)
+            continue
+
+        if mood_name not in AVAILABLE_MOODS:
+            print(f"Error: '{mood_name}' is not a valid mood.")
+            print("\n--- Available Moods ---")
+            print(options_text)
+            continue
+
+        # --- 4. Send the command ---
+        futures = [
+            asyncio.run_coroutine_threadsafe(sendMood(ws, mood_name), loop)
+            for ws in list(ACTIVE_CONNECTIONS)
+        ]
+        for future in futures:
+            future.result()
+        
+        if ACTIVE_CONNECTIONS:
+            print("\n--- Available Moods ---")
+            print(options_text)
 
 
 async def mainAsync():
-    """Start WebSocket server on localhost:1940"""
-    
+    """Starts the WebSocket server and the background terminal input thread."""
     serverAddress = "localhost"
     serverPort = 1940
-    
+
     print(f"Starting WebSocket server on ws://{serverAddress}:{serverPort}")
-    print("Waiting for client connection...")
+
+    loop = asyncio.get_running_loop()
+    input_thread = threading.Thread(target=terminal_input_loop, args=(loop,), daemon=True)
+    input_thread.start()
+
     async with websockets.serve(audioStreamHandler, serverAddress, serverPort):
         await asyncio.Future()
 

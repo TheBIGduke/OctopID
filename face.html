@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OctopID Expressions - Always Listening</title>
+    <title>OctopID Moods - Always Listening</title>
     <style>
 
         :root {
@@ -134,21 +134,21 @@
         </svg>
 
         <div class="controls">
-            <button onclick="setExpression('neutral')">Neutral</button>
-            <button onclick="setExpression('happy')">Happy</button>
-            <button onclick="setExpression('sad')">Sad</button>
-            <button onclick="setExpression('angry')">Angry</button>
-            <button onclick="setExpression('surprised')">Surprised</button>
-            <button onclick="setExpression('love')">Love</button>
-            <button onclick="setExpression('dizzy')">Dizzy</button>
-            <button onclick="setExpression('thinking')">Thinking</button>
-            <button onclick="setExpression('sleepy')">Sleepy</button>
-            <button onclick="setExpression('wink')">Wink</button>
-            <button onclick="setExpression('scared')">Scared</button>
-            <button onclick="setExpression('confused')">Confused</button>
-            <button onclick="setExpression('sick')">Sick</button>
-            <button onclick="setExpression('innocent')">Innocent</button>
-            <button onclick="setExpression('worried')">Worried</button>
+            <button onclick="setMood('neutral')">Neutral</button>
+            <button onclick="setMood('happy')">Happy</button>
+            <button onclick="setMood('sad')">Sad</button>
+            <button onclick="setMood('angry')">Angry</button>
+            <button onclick="setMood('surprised')">Surprised</button>
+            <button onclick="setMood('love')">Love</button>
+            <button onclick="setMood('dizzy')">Dizzy</button>
+            <button onclick="setMood('thinking')">Thinking</button>
+            <button onclick="setMood('sleepy')">Sleepy</button>
+            <button onclick="setMood('wink')">Wink</button>
+            <button onclick="setMood('scared')">Scared</button>
+            <button onclick="setMood('confused')">Confused</button>
+            <button onclick="setMood('sick')">Sick</button>
+            <button onclick="setMood('innocent')">Innocent</button>
+            <button onclick="setMood('worried')">Worried</button>
         </div>
         
         <div id="status">Connecting to audio server...</div>
@@ -163,8 +163,8 @@
         const rightEyeIcon = document.querySelector('#right-eye .eye-icon-container');
         const statusDiv = document.getElementById('status');
         const root = document.documentElement;
-        
-        let currentExpression = 'neutral';
+
+        let currentMood = 'neutral';
         let webSocket;
         let audioAnimationId;
         let isWideEyed = false;
@@ -179,7 +179,7 @@
            EYE ANIMATION - PANNING
            ==================================================================== */
         const panEyes = () => {
-            if (['sleepy', 'wink', 'dizzy', 'love'].includes(currentExpression)) {
+            if (['sleepy', 'wink', 'dizzy', 'love'].includes(currentMood)) {
                 return;
             }
             
@@ -196,7 +196,7 @@
            EYE ANIMATION - BLINKING
            ==================================================================== */
         const blink = () => {
-            if (isWideEyed || ['sleepy', 'wink'].includes(currentExpression)) return;
+            if (isWideEyed || ['sleepy', 'wink'].includes(currentMood)) return;
 
             const blinkTransitionSpeed = '0.1s';
             
@@ -217,9 +217,9 @@
 
 
         /* ====================================================================
-           EXPRESSION DEFINITIONS
+           MOOD DEFINITIONS
            ==================================================================== */
-        const expressions = {
+        const moods = {
             neutral: {
                 color: '#40D4D6',
                 mouthPath: 'M 60 130 L 140 130',
@@ -327,9 +327,9 @@
         };
 
         /* ====================================================================
-           CORE FUNCTION - setExpression()
+           CORE FUNCTION - setMood()
            ==================================================================== */
-        function setExpression(name) {
+        function setMood(name) {
             // Smooth transition
             currentPanX = 0;
             currentPanY = 0;
@@ -339,8 +339,8 @@
             });
 
             isWideEyed = (name === 'surprised');
-            currentExpression = name;
-            const expr = expressions[name];
+            currentMood = name;
+            const expr = moods[name];
 
             if (!expr) return;
 
@@ -384,9 +384,9 @@
                 statusDiv.textContent = 'Connected! Listening to audio...';
                 
                 // Initialize mouth state
-                targetMouthPath = expressions.neutral.mouthPath;
-                currentMouthPath = expressions.neutral.mouthPath;
-                
+                targetMouthPath = moods.neutral.mouthPath;
+                currentMouthPath = moods.neutral.mouthPath;
+
                 webSocket.onmessage = (event) => {
                     const data = JSON.parse(event.data);
                     
@@ -401,13 +401,13 @@
                             targetMouthPath = `M 60 130 A 40 ${mouthOpenness} 0 0 0 140 130 Z`;
                             mouth.style.fill = 'var(--face-color)';
                         } else {
-                            targetMouthPath = expressions[currentExpression].mouthPath;
+                            targetMouthPath = moods[currentMood].mouthPath;
                             mouth.style.fill = 'transparent';
                         }
-                    } else if (data.type === 'expression') {
-                        // Expression change command from server
-                        console.log(`Received expression command: ${data.expression}`);
-                        setExpression(data.expression);
+                    } else if (data.type === 'mood') {
+                        // Mood change command from server
+                        console.log(`Received mood command: ${data.mood}`);
+                        setMood(data.mood);
                     }
                 };
 
@@ -466,7 +466,7 @@
 
         // Auto-connect on page load
         window.addEventListener('DOMContentLoaded', () => {
-            setExpression('neutral');
+            setMood('neutral');
             connectWebSocket();
         });
 
