@@ -4,8 +4,6 @@ import websockets
 import soundcard as sc
 import numpy as np
 from collections import deque
-import time
-import sys
 
 # Central list of all valid moods, synchronized with the HTML file
 AVAILABLE_MOODS = (
@@ -13,8 +11,8 @@ AVAILABLE_MOODS = (
     'doubtful', 'wink', 'scared', 'disappointed', 'innocent', 'worried'
 )
 
-# --- Global state trackers for a single client ---
-ACTIVE_CLIENT = None
+# --- Use a set to track all active clients ---
+ACTIVE_CLIENTS = set()
 is_audio_enabled = False
 is_demo_running = False
 
@@ -26,28 +24,25 @@ midRangeStart, midRangeEnd = 251, 2000
 highRangeStart, highRangeEnd = 2001, 6000
 
 
+async def broadcast(message):
+    """Sends a message to all connected clients."""
+    if ACTIVE_CLIENTS:
+        tasks = [client.send(message) for client in ACTIVE_CLIENTS]
+        await asyncio.gather(*tasks, return_exceptions=True)
+
 async def send_mood(mood_name):
-    """Sends a mood command to the single active client."""
-    if ACTIVE_CLIENT:
-        try:
-            payload = json.dumps({"type": "mood", "mood": mood_name})
-            await ACTIVE_CLIENT.send(payload)
-        except websockets.exceptions.ConnectionClosed:
-            pass # The main handler will perform cleanup
+    """Broadcasts a mood command to all clients."""
+    payload = json.dumps({"type": "mood", "mood": mood_name})
+    await broadcast(payload)
 
 async def send_audio_off_signal():
-    """Sends a reset audio signal to the single active client."""
-    if ACTIVE_CLIENT:
-        try:
-            payload = json.dumps({"type": "audio", "bass": 0})
-            await ACTIVE_CLIENT.send(payload)
-        except websockets.exceptions.ConnectionClosed:
-            pass
+    """Broadcasts a reset audio signal to all clients."""
+    payload = json.dumps({"type": "audio", "bass": 0})
+    await broadcast(payload)
 
 async def run_demo_mode():
-    """Cycles through all available moods for the single client."""
+    """Cycles through moods and broadcasts them to all clients."""
     global is_demo_running
-    
     try:
         print("--> Demo mode started via WebSocket.")
         demo_moods = [mood for mood in AVAILABLE_MOODS if mood != 'neutral']
@@ -56,8 +51,7 @@ async def run_demo_mode():
             if not is_demo_running: break
             await send_mood(mood)
             
-            # Interruptible 3-second delay
-            for _ in range(30):
+            for _ in range(30): # Interruptible 3-second delay
                 if not is_demo_running: break
                 await asyncio.sleep(0.1)
     finally:
@@ -66,10 +60,7 @@ async def run_demo_mode():
         await send_mood('neutral')
 
 async def process_audio():
-    """
-    Captures system audio, performs FFT analysis, and sends the frequency
-    data to the single active client.
-    """
+    """Captures audio and broadcasts FFT data to all clients."""
     global is_audio_enabled
     bass_history = deque(maxlen=5)
     try:
@@ -78,7 +69,7 @@ async def process_audio():
             include_loopback=True
         ).recorder(samplerate=sampleRate, channels=1) as mic:
             while True:
-                if not is_audio_enabled or not ACTIVE_CLIENT:
+                if not is_audio_enabled or not ACTIVE_CLIENTS:
                     await asyncio.sleep(0.1)
                     continue
 
@@ -94,32 +85,20 @@ async def process_audio():
                 smoothed_bass = np.mean(bass_history)
                 
                 payload = json.dumps({"type": "audio", "bass": smoothed_bass})
-                try:
-                    await ACTIVE_CLIENT.send(payload)
-                except websockets.exceptions.ConnectionClosed:
-                    pass # The client_handler will manage the disconnect
+                await broadcast(payload)
                 await asyncio.sleep(0.01)
 
     except Exception as e:
         print(f"Audio processing error: {e}. Audio streaming will stop.")
         is_audio_enabled = False
 
-
 async def client_handler(websocket):
-    """
-    Handles a client connection, listening for commands and managing state.
-    Ensures only one client is connected at a time.
-    """
-    global ACTIVE_CLIENT, is_audio_enabled, is_demo_running
-    
-    if ACTIVE_CLIENT:
-        print("New client connected, replacing the previous one.")
-        await ACTIVE_CLIENT.close(code=1000, reason="New connection established")
-    else:
-        print("Client connected! Server is now controlled via WebSocket messages.")
-        
-    ACTIVE_CLIENT = websocket
-    
+    """Handles a client connection, adding it to the active set."""
+    # --- FIX: Declare that we are using the global variables ---
+    global is_audio_enabled, is_demo_running
+
+    print(f"Client connected: {websocket.remote_address}")
+    ACTIVE_CLIENTS.add(websocket)
     try:
         async for message in websocket:
             try:
@@ -161,19 +140,14 @@ async def client_handler(websocket):
             except Exception as e:
                 print(f"An error occurred while processing a message: {e}")
     finally:
-        # Check if the disconnected client is the one we were tracking
-        if ACTIVE_CLIENT == websocket:
-            ACTIVE_CLIENT = None
-            print("Client disconnected.")
-            print("Waiting for a new connection...")
-
+        print(f"Client disconnected: {websocket.remote_address}")
+        ACTIVE_CLIENTS.remove(websocket)
 
 async def mainAsync():
-    """Starts the WebSocket server and the background audio processing task."""
     serverAddress = "localhost"
     serverPort = 8760
     print(f"Starting WebSocket server on ws://{serverAddress}:{serverPort}")
-    print("Waiting for client connection...")
+    print("Waiting for client connections...")
 
     asyncio.create_task(process_audio())
 
