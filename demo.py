@@ -27,15 +27,9 @@ async def octopid_controller_demo():
             print("Successfully connected to the OctopID server.")
             print("-" * 30)
 
-            # --- 1. Demonstrate Changing Moods ---
-            print("\nCycling through some moods...")
-            for mood in ['happy', 'sad', 'surprised', 'angry', 'neutral']:
-                await send_command(websocket, "mood", {"mood": mood})
-                await asyncio.sleep(2)
-
-            # --- 2. Demonstrate Audio-Reactive Mode ---
+            # --- Demonstrate Audio-Reactive Mode ---
             print("\nTesting the audio-reactive 'listening' mode...")
-            print("Turning audio ON. Play some music or talk!")
+            print("Turning audio ON. Play some audio!")
             await send_command(websocket, "audio", {"command": "on"})
             await asyncio.sleep(8)  # Listen for 8 seconds
 
@@ -43,7 +37,21 @@ async def octopid_controller_demo():
             await send_command(websocket, "audio", {"command": "off"})
             await asyncio.sleep(2)
 
-            # --- 3. Demonstrate the Built-in Demo Mode ---
+            print("\nTurning audio ON.")
+            await send_command(websocket, "audio", {"command": "on"})
+            await asyncio.sleep(2)
+
+            # --- Demonstrate Changing Moods ---
+            print("\nCycling through some moods...")
+            for mood in [AVAILABLE_MOODS[i] for i in range(len(AVAILABLE_MOODS))]:
+                await send_command(websocket, "mood", {"mood": mood})
+                await asyncio.sleep(2)
+
+            print("\nTurning audio OFF.")
+            await send_command(websocket, "audio", {"command": "off"})
+            await asyncio.sleep(2)
+
+            # --- Demonstrate the Built-in Demo Mode ---
             print("\nStarting the automatic demo mode...")
             await send_command(websocket, "demo", {"command": "start"})
             await asyncio.sleep(10) # Let the demo run for 10 seconds
@@ -51,12 +59,6 @@ async def octopid_controller_demo():
             print("\nStopping the demo mode.")
             await send_command(websocket, "demo", {"command": "stop"})
             await asyncio.sleep(2)
-
-            # --- 4. Final Random Mood ---
-            final_mood = random.choice(AVAILABLE_MOODS)
-            print(f"\nSetting a final random mood: '{final_mood}'")
-            await send_command(websocket, "mood", {"mood": final_mood})
-            await asyncio.sleep(3)
 
             print("-" * 30)
             print("Demo finished successfully!")
