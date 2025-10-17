@@ -11,8 +11,7 @@ import sys
 # Central list of all valid moods
 AVAILABLE_MOODS = (
     'neutral', 'happy', 'sad', 'angry', 'surprised', 'love', 'dizzy',
-    'thinking', 'sleepy', 'wink', 'scared', 'confused', 'sick',
-    'innocent', 'worried'
+    'thinking', 'wink', 'scared', 'confused', 'innocent', 'worried'
 )
 
 # --- Global state trackers ---
