@@ -187,18 +187,11 @@
                 rightEyePath: 'M 180,95 m -18,0 a18,18 0 1,1 36,0 a12,12 0 1,1 -24,0 a6,6 0 1,1 12,0',
             },
 
-            thinking: {
+            doubtful: {
                 color: '#3498DB',
                 mouthPath: 'M 70 135 L 130 125',
                 leftEyePath: 'M 15,110 L 15,80 A 15,30 0 0,1 45,80 L 45,110 Z',
                 rightEyePath: 'M 175,110 L 175,80 A 15,30 0 0,1 205,80 L 205,110 Z',
-            },
-
-            sleepy: {
-                color: '#95A5A6',
-                mouthPath: 'M 95 135 A 5 5 0 1 0 105 135 A 5 5 0 1 0 95 135 Z',
-                leftEyePath: 'M 5,110 A 15,30 0 0,1 35,110',
-                rightEyePath: 'M 165,110 A 15,30 0 0,1 195,110',
             },
 
             wink: {
@@ -214,20 +207,12 @@
                 leftEyePath: 'M 5,115 L 5,75 A 15,35 0 0,1 35,75 L 35,115 Z',
                 rightEyePath: 'M 165,115 L 165,75 A 15,35 0 0,1 195,75 L 195,115 Z',
             },
-            
-            // <-- FIX: Renamed from 'disappointed' to 'confused' -->
-            confused: {
+
+            disappointed: {
                 color: '#BCA0DC',
                 mouthPath: 'M 70 135 Q 90 145, 110 135 T 140 140',
                 leftEyePath: 'M 5,110 L 5,80 A 15,30 0 0,1 35,80 L 35,110 Z',
                 rightEyePath: 'M 165,80 A 15,40 0 0,0 195,80',
-            },
-
-            sick: {
-                color: '#88B04B',
-                mouthPath: 'M 70 140 C 90 120, 110 150, 130 130',
-                leftEyePath: 'M 5,100 L 35,50 L 35,110 L 5,110 Z',
-                rightEyePath: 'M 165,85 L 195,80 L 195,110 L 165,110 Z',
             },
 
             innocent: {
@@ -292,7 +277,7 @@
            WEBSOCKET LOGIC - ALWAYS LISTENING MODE
            ==================================================================== */
         function connectWebSocket() {
-            const serverAddress = 'ws://localhost:1940';
+            const serverAddress = 'ws://localhost:8760';
             webSocket = new WebSocket(serverAddress);
 
             webSocket.onopen = () => {

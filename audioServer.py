@@ -11,13 +11,15 @@ import sys
 # Central list of all valid moods, synchronized with the HTML file
 AVAILABLE_MOODS = (
     'neutral', 'happy', 'sad', 'angry', 'surprised', 'love', 'dizzy',
-    'thinking', 'sleepy', 'wink', 'scared', 'confused', 'sick', 'innocent', 'worried'
+    'doubtful', 'wink', 'scared', 'disappointed', 'innocent', 'worried'
 )
 
 # --- Global state trackers ---
 ACTIVE_CONNECTIONS = set()
 initial_connection_made = False
-is_audio_enabled = True
+# --- MODIFICATION: Changed initial audio state to off ---
+is_audio_enabled = False
+is_demo_running = False
 
 # --- Audio settings ---
 sampleRate = 44100
@@ -85,7 +87,6 @@ async def sendMood(websocket, mood_name):
     try:
         payload = {"type": "mood", "mood": mood_name}
         await websocket.send(json.dumps(payload))
-        print(f"--> Sent command: '{mood_name}'")
     except websockets.exceptions.ConnectionClosed:
         pass
 
@@ -98,11 +99,40 @@ async def send_audio_off_signal(websocket):
         pass
 
 
+async def run_demo_mode(connections):
+    """Cycles through all available moods, checking for an interruption flag."""
+    global is_demo_running
+    
+    try:
+        print("--> Starting demo mode... (Press Enter in the terminal to stop)")
+        demo_moods = [mood for mood in AVAILABLE_MOODS if mood != 'neutral']
+        
+        for mood in demo_moods:
+            if not is_demo_running: break
+
+            if not all(ws in ACTIVE_CONNECTIONS for ws in connections):
+                print("Demo stopped: Client disconnected.")
+                return
+
+            print(f"--> Demo: Setting mood to '{mood}'")
+            await asyncio.gather(*(sendMood(ws, mood) for ws in connections))
+            
+            for _ in range(30):
+                if not is_demo_running: break
+                await asyncio.sleep(0.1)
+
+    finally:
+        is_demo_running = False
+        print("--> Demo finished or interrupted. Resetting to 'neutral'.")
+        if all(ws in ACTIVE_CONNECTIONS for ws in connections):
+            await asyncio.gather(*(sendMood(ws, 'neutral') for ws in connections))
+
+
 def terminal_input_loop(loop):
     """
     Runs in a background thread to provide a robust command-line interface.
     """
-    global is_audio_enabled
+    global is_audio_enabled, is_demo_running
     options_text = ", ".join(AVAILABLE_MOODS)
     loader_chars = ['|', '/', '-', '\\']
 
@@ -117,11 +147,20 @@ def terminal_input_loop(loop):
                 i += 1
                 time.sleep(0.2)
             
-            # --- FIX: Corrected f-string for initial display ---
             print(f"\rClient connected! You can now send commands.      ")
-            print(f"\n--- Available Commands ---\nMoods: {options_text}\nAudio: audio on, audio off")
+            print(f"\n--- Available Commands ---\nMoods: {options_text}\nActions: demo, audio on, audio off")
         
-        command = input("Enter command: ").strip().lower()
+        prompt = "Press [Enter] to stop demo, or enter new command: " if is_demo_running else "Enter command: "
+        command = input(prompt).strip().lower()
+
+        if is_demo_running and not command:
+            print("--> User interrupted demo mode.")
+            is_demo_running = False
+            continue
+
+        if is_demo_running and command:
+            is_demo_running = False
+            time.sleep(0.2)
 
         if not ACTIVE_CONNECTIONS:
             continue
@@ -134,31 +173,35 @@ def terminal_input_loop(loop):
             if is_audio_enabled:
                 is_audio_enabled = False
                 print("--> Audio streaming DISABLED.")
-                # --- FIX: Send a reset signal to the client to close its mouth ---
                 futures = [
                     asyncio.run_coroutine_threadsafe(send_audio_off_signal(ws), loop)
                     for ws in list(ACTIVE_CONNECTIONS)
                 ]
-                for future in futures:
-                    future.result()
+                for future in futures: future.result()
+        elif command == 'demo':
+            if is_demo_running:
+                print("--> Demo is already running. Press [Enter] to stop it.")
+            else:
+                is_demo_running = True
+                asyncio.run_coroutine_threadsafe(run_demo_mode(list(ACTIVE_CONNECTIONS)), loop)
         elif command in AVAILABLE_MOODS:
+            print(f"--> Sending command: '{command}'")
             futures = [
                 asyncio.run_coroutine_threadsafe(sendMood(ws, command), loop)
                 for ws in list(ACTIVE_CONNECTIONS)
             ]
-            for future in futures:
-                future.result()
+            for future in futures: future.result()
         elif command:
             print(f"Error: '{command}' is not a valid command.")
         
         if ACTIVE_CONNECTIONS and command:
-             print(f"\n--- Available Commands ---\nMoods: {options_text}\nAudio: audio on, audio off")
+             print(f"\n--- Available Commands ---\nMoods: {options_text}\nActions: demo, audio on, audio off")
 
 
 async def mainAsync():
     """Starts the WebSocket server and the background terminal input thread."""
     serverAddress = "localhost"
-    serverPort = 1940
+    serverPort = 8760
     print(f"Starting WebSocket server on ws://{serverAddress}:{serverPort}")
 
     loop = asyncio.get_running_loop()
