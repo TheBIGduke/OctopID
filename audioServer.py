@@ -13,10 +13,12 @@ AVAILABLE_MOODS = (
 
 # --- Use a set to track all active clients ---
 ACTIVE_CLIENTS = set()
+# Flag state variables
 is_audio_enabled = False
 is_demo_running = False
 
 # --- Audio settings ---
+# Define the frequency ranges (in Hz)
 sampleRate = 44100
 chunkSize = 1024
 bassRangeStart, bassRangeEnd = 60, 250
@@ -30,6 +32,7 @@ async def broadcast(message):
         tasks = [client.send(message) for client in ACTIVE_CLIENTS]
         await asyncio.gather(*tasks, return_exceptions=True)
 
+# --- Helper functions to format the JSON payloads ---
 async def send_mood(mood_name):
     """Broadcasts a mood command to all clients."""
     payload = json.dumps({"type": "mood", "mood": mood_name})
@@ -40,6 +43,7 @@ async def send_audio_off_signal():
     payload = json.dumps({"type": "audio", "bass": 0})
     await broadcast(payload)
 
+# --- Demo mode ---
 async def run_demo_mode():
     """Cycles through moods and broadcasts them to all clients."""
     global is_demo_running
@@ -51,7 +55,7 @@ async def run_demo_mode():
             if not is_demo_running: break
             await send_mood(mood)
             
-            for _ in range(30): # Interruptible 3-second delay
+            for _ in range(30):
                 if not is_demo_running: break
                 await asyncio.sleep(0.1)
     finally:
@@ -59,23 +63,28 @@ async def run_demo_mode():
         print("--> Demo finished or interrupted. Resetting to 'neutral'.")
         await send_mood('neutral')
 
+# --- Audio engine ---
 async def process_audio():
     """Captures audio and broadcasts FFT data to all clients."""
     global is_audio_enabled
-    bass_history = deque(maxlen=5)
+    bass_history = deque(maxlen=5) ## Smooths bass values
     try:
+        # Captures the audio's output (loopback)
         with sc.get_microphone(
             id=str(sc.default_speaker().name),
             include_loopback=True
         ).recorder(samplerate=sampleRate, channels=1) as mic:
             while True:
+                # If the audio is diabled or no clients are connected
                 if not is_audio_enabled or not ACTIVE_CLIENTS:
                     await asyncio.sleep(0.1)
                     continue
-
+                
+                # Chunk capture
                 data = mic.record(numframes=chunkSize)
                 if data.size == 0: continue
 
+                # --- Fast Fourier Transform Processing ---
                 fftData = np.fft.rfft(data[:, 0])
                 fftFreq = np.fft.rfftfreq(len(data[:, 0]), 1.0 / sampleRate)
                 bassIndices = np.where((fftFreq >= bassRangeStart) & (fftFreq <= bassRangeEnd))
@@ -84,6 +93,7 @@ async def process_audio():
                 bass_history.append(normalizedBass)
                 smoothed_bass = np.mean(bass_history)
                 
+                # Broadcast the audio data into a JSON payload
                 payload = json.dumps({"type": "audio", "bass": smoothed_bass})
                 await broadcast(payload)
                 await asyncio.sleep(0.01)
@@ -94,11 +104,10 @@ async def process_audio():
 
 async def client_handler(websocket):
     """Handles a client connection, adding it to the active set."""
-    # --- FIX: Declare that we are using the global variables ---
     global is_audio_enabled, is_demo_running
 
     print(f"Client connected: {websocket.remote_address}")
-    ACTIVE_CLIENTS.add(websocket)
+    ACTIVE_CLIENTS.add(websocket) # Adds the new client to the ACTIVE_CLIENTS set
     try:
         async for message in websocket:
             try:
@@ -110,13 +119,13 @@ async def client_handler(websocket):
                     is_demo_running = False
                     await asyncio.sleep(0.1)
 
-                if command_type == "mood":
+                if command_type == "mood": # Broadcast a new mood
                     mood = data.get("mood")
                     if mood in AVAILABLE_MOODS:
                         print(f"<-- Received command: '{mood}'")
                         await send_mood(mood)
                 
-                elif command_type == "audio":
+                elif command_type == "audio": # Flips the global audio capture flag on or off
                     command = data.get("command")
                     if command == "on" and not is_audio_enabled:
                         is_audio_enabled = True
@@ -126,7 +135,7 @@ async def client_handler(websocket):
                         print("<-- Audio streaming DISABLED.")
                         await send_audio_off_signal()
 
-                elif command_type == "demo":
+                elif command_type == "demo": # Flips the global demo mode flag on or off
                     command = data.get("command")
                     if command == "start" and not is_demo_running:
                         is_demo_running = True
@@ -139,18 +148,23 @@ async def client_handler(websocket):
                 print("Error: Received invalid JSON message.")
             except Exception as e:
                 print(f"An error occurred while processing a message: {e}")
+                
+     # When the client disconnects oor the the loop breaks, it remove the client from the set
     finally:
         print(f"Client disconnected: {websocket.remote_address}")
         ACTIVE_CLIENTS.remove(websocket)
 
+# --- Server startup ---
 async def mainAsync():
     serverAddress = "localhost"
     serverPort = 8760
     print(f"Starting WebSocket server on ws://{serverAddress}:{serverPort}")
     print("Waiting for client connections...")
 
+    # Starts the audio task in the background
     asyncio.create_task(process_audio())
 
+    # Starts the WebSocket server
     async with websockets.serve(client_handler, serverAddress, serverPort):
         await asyncio.Future()
 

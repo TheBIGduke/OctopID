@@ -277,7 +277,7 @@
            WEBSOCKET LOGIC - ALWAYS LISTENING MODE
            ==================================================================== */
         function connectWebSocket() {
-            const serverAddress = 'ws://localhost:8760';
+            const serverAddress = 'ws://localhost:8760'; // Modifiy the server address if needed
             webSocket = new WebSocket(serverAddress);
 
             webSocket.onopen = () => {
@@ -286,13 +286,14 @@
                 currentMouthPath = moods.neutral.mouthPath;
 
                 webSocket.onmessage = (event) => {
-                    const data = JSON.parse(event.data);
+                    const data = JSON.parse(event.data); // Parses the incoming JSON into a JS object
 
-                    if (data.type === 'audio') {
+                    if (data.type === 'audio') { // Verifies if the data is audio
                         const bassLevel = data.bass;
                         const talkingThreshold = 0.1;
 
                         if (bassLevel > talkingThreshold) {
+                            // Calculates mouth openness based on bass level
                             const mouthOpenness = bassLevel * 40;
                             targetMouthPath = `M 60 130 A 40 ${mouthOpenness} 0 0 0 140 130 Z`;
                             mouth.style.fill = 'var(--face-color)';
@@ -300,14 +301,15 @@
                             targetMouthPath = moods[currentMood].mouthPath;
                             mouth.style.fill = 'transparent';
                         }
-                    } else if (data.type === 'mood') {
+                    } else if (data.type === 'mood') { // Checks if the data is a mood command
                         console.log(`Received mood command: ${data.mood}`);
                         setMood(data.mood);
                     }
                 };
                 animateMouth();
             };
-
+            
+            // If the connection drops, it will try to reconnect
             webSocket.onclose = () => {
                 console.log('Disconnected from the WebSocket server');
                 setTimeout(connectWebSocket, 3000);
