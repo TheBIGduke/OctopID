@@ -91,33 +91,39 @@ async def client_handler(websocket):
     print(f"Client connected: {websocket.remote_address}")
     ACTIVE_CLIENTS.add(websocket) # Adds the new client to the ACTIVE_CLIENTS set
     try:
-        async for message in websocket:
-            try:
-                data = json.loads(message)
-                command_type = data.get("type")
+        # Explicitly wrap the message loop to catch the expected connection closure exception
+        try:
+            async for message in websocket:
+                try:
+                    data = json.loads(message)
+                    command_type = data.get("type")
 
-                if command_type == "mood": # Broadcast a new mood
-                    mood = data.get("mood")
-                    if mood in AVAILABLE_MOODS:
-                        print(f"<-- Received command: '{mood}'")
-                        await send_mood(mood)
-                
-                elif command_type == "audio": # Flips the global audio capture flag on or off
-                    command = data.get("command")
-                    if command == "on" and not is_audio_enabled:
-                        is_audio_enabled = True
-                        print("<-- Audio streaming ENABLED.")
-                    elif command == "off" and is_audio_enabled:
-                        is_audio_enabled = False
-                        print("<-- Audio streaming DISABLED.")
-                        await send_audio_off_signal()
+                    if command_type == "mood": # Broadcast a new mood
+                        mood = data.get("mood")
+                        if mood in AVAILABLE_MOODS:
+                            print(f"<-- Received command: '{mood}'")
+                            await send_mood(mood)
+                    
+                    elif command_type == "audio": # Flips the global audio capture flag on or off
+                        command = data.get("command")
+                        if command == "on" and not is_audio_enabled:
+                            is_audio_enabled = True
+                            print("<-- Audio streaming ENABLED.")
+                        elif command == "off" and is_audio_enabled:
+                            is_audio_enabled = False
+                            print("<-- Audio streaming DISABLED.")
+                            await send_audio_off_signal()
 
-            except json.JSONDecodeError:
-                print("Error: Received invalid JSON message.")
-            except Exception as e:
-                print(f"An error occurred while processing a message: {e}")
-                
-     # When the client disconnects oor the the loop breaks, it remove the client from the set
+                except json.JSONDecodeError:
+                    print("Error: Received invalid JSON message.")
+                except Exception as e:
+                    print(f"An error occurred while processing a message: {e}")
+        
+        # Catch the exception that ends the async for loop (client disconnect)
+        except websockets.exceptions.ConnectionClosed:
+            pass # Suppress the log entry, as the closure is expected
+            
+     # When the client disconnects or the the loop breaks, it remove the client from the set
     finally:
         print(f"Client disconnected: {websocket.remote_address}")
         ACTIVE_CLIENTS.remove(websocket)
