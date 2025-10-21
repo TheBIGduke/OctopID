@@ -21,7 +21,6 @@ ACTIVE_CONNECTIONS = set()
 initial_connection_made = False
 # --- MODIFICATION: Changed initial audio state to off ---
 is_audio_enabled = False
-is_demo_running = False
 
 # --- Audio settings ---
 sampleRate = 44100
@@ -56,6 +55,7 @@ async def process_audio(websocket):
     global is_audio_enabled
     bass_history = deque(maxlen=5)
     try:
+        # NOTE: This uses the loopback device name. May fail if the system speaker name changes.
         with sc.get_microphone(
             id=str(sc.default_speaker().name),
             include_loopback=True
@@ -68,10 +68,13 @@ async def process_audio(websocket):
                 data = mic.record(numframes=chunkSize)
                 if data.size == 0: continue
 
+                # FFT analysis
                 fftData = np.fft.rfft(data[:, 0])
                 fftFreq = np.fft.rfftfreq(len(data[:, 0]), 1.0 / sampleRate)
                 bassIndices = np.where((fftFreq >= bassRangeStart) & (fftFreq <= bassRangeEnd))
                 bassEnergy = np.mean(np.abs(fftData[bassIndices])) if bassIndices[0].size > 0 else 0
+                
+                # Normalization and smoothing
                 normalizedBass = min(bassEnergy / 30.0, 1.0)
                 bass_history.append(normalizedBass)
                 smoothed_bass = np.mean(bass_history)
@@ -82,6 +85,9 @@ async def process_audio(websocket):
 
     except websockets.exceptions.ConnectionClosed:
         pass
+    except Exception as e:
+        print(f"Audio processing error: {e}")
+        pass # Allow the handler to clean up
 
 
 async def sendMood(websocket, mood_name):
@@ -100,45 +106,20 @@ async def send_audio_off_signal(websocket):
     except websockets.exceptions.ConnectionClosed:
         pass
 
-
-async def run_demo_mode(connections):
-    """Cycles through all available moods, checking for an interruption flag."""
-    global is_demo_running
-    
-    try:
-        print("--> Starting demo mode... (Press Enter in the terminal to stop)")
-        demo_moods = [mood for mood in AVAILABLE_MOODS if mood != 'neutral']
-        
-        for mood in demo_moods:
-            if not is_demo_running: break
-
-            if not all(ws in ACTIVE_CONNECTIONS for ws in connections):
-                print("Demo stopped: Client disconnected.")
-                return
-
-            print(f"--> Demo: Setting mood to '{mood}'")
-            await asyncio.gather(*(sendMood(ws, mood) for ws in connections))
-            
-            for _ in range(30):
-                if not is_demo_running: break
-                await asyncio.sleep(0.1)
-
-    finally:
-        is_demo_running = False
-        print("--> Demo finished or interrupted. Resetting to 'neutral'.")
-        if all(ws in ACTIVE_CONNECTIONS for ws in connections):
-            await asyncio.gather(*(sendMood(ws, 'neutral') for ws in connections))
-
+def print_help_menu(options_text):
+    """Prints the available commands."""
+    print(f"\n--- Available Commands ---\nMoods: {options_text}\nActions: audio on, audio off\nType 'exit' to quit.")
 
 def terminal_input_loop(loop):
     """
     Runs in a background thread to provide a robust command-line interface.
     """
-    global is_audio_enabled, is_demo_running
+    global is_audio_enabled
     options_text = ", ".join(AVAILABLE_MOODS)
     loader_chars = ['|', '/', '-', '\\']
 
     while True:
+        # Handle connection status display
         if not ACTIVE_CONNECTIONS:
             i = 0
             message = "Connection lost. Reconnecting... " if initial_connection_made else "Waiting for client connection... "
@@ -150,54 +131,68 @@ def terminal_input_loop(loop):
                 time.sleep(0.2)
             
             print(f"\rClient connected! You can now send commands.      ")
-            print(f"\n--- Available Commands ---\nMoods: {options_text}\nActions: demo, audio on, audio off")
-        
-        prompt = "Press [Enter] to stop demo, or enter new command: " if is_demo_running else "Enter command: "
-        command = input(prompt).strip().lower()
-
-        if is_demo_running and not command:
-            print("--> User interrupted demo mode.")
-            is_demo_running = False
-            continue
-
-        if is_demo_running and command:
-            is_demo_running = False
-            time.sleep(0.2)
-
+            print_help_menu(options_text)
+            
         if not ACTIVE_CONNECTIONS:
+            # Should not reach here, but as a safeguard
+            time.sleep(0.5) 
             continue
 
-        if command == 'audio on':
+        # Get command input from the user (Fix for NameError)
+        try:
+            command = input("Enter command: ").strip().lower()
+        except EOFError:
+            # Handle Ctrl+D
+            command = 'exit'
+        except KeyboardInterrupt:
+            # Handle Ctrl+C (let the main thread handle the global exit)
+            return 
+        
+        if command == 'exit':
+            print("\nExiting command loop.")
+            # Use sys.exit to shut down the program gracefully
+            # Note: sys.exit() on a thread only exits the thread, use a flag for main loop, 
+            # but for a simple terminal tool, forcing an exit is often acceptable.
+            # In this case, we rely on the main process KeyboardInterrupt handler.
+            return 
+
+        elif command == 'audio on':
             if not is_audio_enabled:
                 is_audio_enabled = True
                 print("--> Audio streaming ENABLED.")
+            else:
+                print("--> Audio streaming is already ON.")
+
         elif command == 'audio off':
             if is_audio_enabled:
                 is_audio_enabled = False
-                print("--> Audio streaming DISABLED.")
+                print("--> Audio streaming DISABLED. Sending reset signal.")
+                # Send the zero-bass signal in the async loop
                 futures = [
                     asyncio.run_coroutine_threadsafe(send_audio_off_signal(ws), loop)
                     for ws in list(ACTIVE_CONNECTIONS)
                 ]
+                # Wait for the coroutines to complete before proceeding
                 for future in futures: future.result()
-        elif command == 'demo':
-            if is_demo_running:
-                print("--> Demo is already running. Press [Enter] to stop it.")
             else:
-                is_demo_running = True
-                asyncio.run_coroutine_threadsafe(run_demo_mode(list(ACTIVE_CONNECTIONS)), loop)
+                print("--> Audio streaming is already OFF.")
+
         elif command in AVAILABLE_MOODS:
             print(f"--> Sending command: '{command}'")
+            # Send the mood command in the async loop
             futures = [
                 asyncio.run_coroutine_threadsafe(sendMood(ws, command), loop)
                 for ws in list(ACTIVE_CONNECTIONS)
             ]
+            # Wait for the coroutines to complete before proceeding
             for future in futures: future.result()
+
         elif command:
             print(f"Error: '{command}' is not a valid command.")
-        
-        if ACTIVE_CONNECTIONS and command:
-             print(f"\n--- Available Commands ---\nMoods: {options_text}\nActions: demo, audio on, audio off")
+            print_help_menu(options_text)
+
+        # Clear command variable for next loop iteration
+        command = None 
 
 
 async def mainAsync():
@@ -206,11 +201,13 @@ async def mainAsync():
     serverPort = 8760
     print(f"Starting WebSocket server on ws://{serverAddress}:{serverPort}")
 
+    # The terminal input loop needs access to the running loop
     loop = asyncio.get_running_loop()
     input_thread = threading.Thread(target=terminal_input_loop, args=(loop,), daemon=True)
     input_thread.start()
 
     async with websockets.serve(audioStreamHandler, serverAddress, serverPort):
+        # Keep the main async loop running indefinitely
         await asyncio.Future()
 
 
@@ -218,4 +215,6 @@ if __name__ == "__main__":
     try:
         asyncio.run(mainAsync())
     except KeyboardInterrupt:
-        print("\nServer stopped")
+        print("\nServer stopped by user (Ctrl+C)")
+    except Exception as e:
+        print(f"An unhandled error occurred: {e}")
