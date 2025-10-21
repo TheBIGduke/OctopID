@@ -97,7 +97,7 @@
            EYE ANIMATION - PANNING
            ==================================================================== */
         const panEyes = () => {
-            if (['sleepy', 'wink', 'dizzy', 'love'].includes(currentMood)) {
+            if (['wink', 'dizzy', 'love'].includes(currentMood)) {
                 return;
             }
 
@@ -114,7 +114,7 @@
            EYE ANIMATION - BLINKING
            ==================================================================== */
         const blink = () => {
-            if (isWideEyed || ['sleepy', 'wink'].includes(currentMood)) return;
+            if (isWideEyed || ['wink'].includes(currentMood)) return;
 
             const blinkTransitionSpeed = '0.1s';
 
