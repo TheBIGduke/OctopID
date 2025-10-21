@@ -31,7 +31,7 @@ async def octopid_controller_demo():
             # {"type": "audio", "command": "on"} or {"type": "audio", "command": "off"}
 
             print("\nTesting the audio-reactive 'listening' mode...")
-            print("Turning audio ON. Play some audio!")
+            print("Turning audio ON. Play some speech audio!")
             # Sending the command to turn it on
             await send_command(websocket, "audio", {"command": "on"})
             await asyncio.sleep(8)  # Listen for 8 seconds
@@ -58,19 +58,6 @@ async def octopid_controller_demo():
 
             print("\nTurning audio OFF.")
             await send_command(websocket, "audio", {"command": "off"})
-            await asyncio.sleep(2)
-
-            # --- Demonstrate the Built-in Demo Mode ---
-            # In order to start/stop the automatic demo mode, which cycles through moods automatically,
-            # you need to send the JSON as follows:
-            # {"type": "demo", "command": "start"} or {"type": "demo", "command": "stop"}
-            
-            print("\nStarting the automatic demo mode...")
-            await send_command(websocket, "demo", {"command": "start"})
-            await asyncio.sleep(10) # Let the demo run for 10 seconds
-
-            print("\nStopping the demo mode.")
-            await send_command(websocket, "demo", {"command": "stop"})
             await asyncio.sleep(2)
 
             print("-" * 30)

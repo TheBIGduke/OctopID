@@ -81,20 +81,7 @@ cd OctopID
 ```bash
 pip install websockets soundcard numpy
 ```
-
-### 3. Set Up Local Server (Optional)
-
-For the best experience, serve `face.html` from a local web server:
-
-**Using Python:**
-```bash
-python -m http.server 1940
-```
-
-**Using VS Code Live Server:**
-Install the Live Server extension and click "Go Live" in the status bar.
-
-### 4. Start the Audio Server
+### 3. Start the Audio Server
 
 In a terminal, run:
 ```bash

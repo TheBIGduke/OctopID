@@ -15,7 +15,7 @@ AVAILABLE_MOODS = (
 ACTIVE_CLIENTS = set()
 # Flag state variables
 is_audio_enabled = False
-is_demo_running = False
+
 
 # --- Audio settings ---
 # Define the frequency ranges (in Hz)
@@ -42,26 +42,6 @@ async def send_audio_off_signal():
     """Broadcasts a reset audio signal to all clients."""
     payload = json.dumps({"type": "audio", "bass": 0})
     await broadcast(payload)
-
-# --- Demo mode ---
-async def run_demo_mode():
-    """Cycles through moods and broadcasts them to all clients."""
-    global is_demo_running
-    try:
-        print("--> Demo mode started via WebSocket.")
-        demo_moods = [mood for mood in AVAILABLE_MOODS if mood != 'neutral']
-        
-        for mood in demo_moods:
-            if not is_demo_running: break
-            await send_mood(mood)
-            
-            for _ in range(30):
-                if not is_demo_running: break
-                await asyncio.sleep(0.1)
-    finally:
-        is_demo_running = False
-        print("--> Demo finished or interrupted. Resetting to 'neutral'.")
-        await send_mood('neutral')
 
 # --- Audio engine ---
 async def process_audio():
@@ -102,9 +82,11 @@ async def process_audio():
         print(f"Audio processing error: {e}. Audio streaming will stop.")
         is_audio_enabled = False
 
+# --- WebSocket server handler ---
+
 async def client_handler(websocket):
     """Handles a client connection, adding it to the active set."""
-    global is_audio_enabled, is_demo_running
+    global is_audio_enabled
 
     print(f"Client connected: {websocket.remote_address}")
     ACTIVE_CLIENTS.add(websocket) # Adds the new client to the ACTIVE_CLIENTS set
@@ -113,11 +95,6 @@ async def client_handler(websocket):
             try:
                 data = json.loads(message)
                 command_type = data.get("type")
-
-                if command_type != "demo" and is_demo_running:
-                    print("--> Demo interrupted by new command.")
-                    is_demo_running = False
-                    await asyncio.sleep(0.1)
 
                 if command_type == "mood": # Broadcast a new mood
                     mood = data.get("mood")
@@ -134,15 +111,6 @@ async def client_handler(websocket):
                         is_audio_enabled = False
                         print("<-- Audio streaming DISABLED.")
                         await send_audio_off_signal()
-
-                elif command_type == "demo": # Flips the global demo mode flag on or off
-                    command = data.get("command")
-                    if command == "start" and not is_demo_running:
-                        is_demo_running = True
-                        asyncio.create_task(run_demo_mode())
-                    elif command == "stop" and is_demo_running:
-                        print("<-- Received command: stop demo")
-                        is_demo_running = False
 
             except json.JSONDecodeError:
                 print("Error: Received invalid JSON message.")
