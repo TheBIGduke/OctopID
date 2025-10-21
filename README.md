@@ -5,21 +5,22 @@
 [![WebSocket](https://img.shields.io/badge/WebSocket-Enabled-blue.svg)](https://developer.mozilla.org/en-US/docs/Web/API/WebSocket)
 [![Python](https://img.shields.io/badge/Python-3.7+-yellow.svg)](https://www.python.org/)
 
-OctopID is an expressive, animated face system built with **SVG** and **JavaScript**. It features 15 unique emotional expressions with smooth transitions, automatic eye movements (panning and blinking), and a special **audio-reactive "listening" mode** that synchronizes mouth movements with real-time audio input via WebSocket streaming. Perfect for virtual assistants, chatbots, interactive characters, or live audio visualization.
+OctopID is an expressive, animated face system built with **SVG** and **JavaScript**. It features 13 unique emotional expressions with smooth transitions, automatic eye movements (panning and blinking), and a special **audio-reactive "listening" mode** that synchronizes mouth movements with real-time audio input via WebSocket streaming. Perfect for virtual assistants, chatbots, interactive characters, or live audio visualization.
 
 ---
 
 ## Features
 
-- **15 Unique Expressions** – From neutral to happy, sad, angry, surprised, and more exotic emotions like dizzy, sick, and innocent.
-- **Real-time Audio Synchronization** – The "listening" mode captures system audio via WebSocket and animates the mouth to match speech patterns using FFT frequency analysis.
+- **13 Unique Expressions** – From neutral to happy, sad, angry, surprised, and more exotic emotions like dizzy or innocent.
+- **Real-time Audio Synchronization** – Audio-reactive mode captures system audio via WebSocket and animates the mouth to match speech patterns using FFT frequency analysis.
 - **Smooth Animations** – CSS transitions create fluid movements between expressions and eye states with configurable interpolation.
-- **Automatic Eye Behaviors** – Eyes blink naturally (2-7 second intervals) and pan randomly (3-7 seconds) to simulate lifelike attention.
+- **Automatic Eye Behaviors** – Eyes blink naturally and pan randomly to simulate lifelike attention.
 - **Fully Customizable** – Easily modify colors, shapes, speeds, and audio sensitivity through CSS variables and JavaScript parameters.
-- **WebSocket Architecture** – Python backend performs FFT audio analysis and streams normalized frequency data (bass/mids/highs) to the frontend.
+- **WebSocket Architecture** – Python backend performs FFT audio analysis and streams normalized frequency data (bass) to the frontend.
 - **Spanish Language Optimized** – Audio frequency ranges tuned for Spanish speech patterns (mid-range frequencies 251-2000 Hz for vowel detection).
 - **No External Dependencies (Frontend)** – Pure HTML5, CSS3, and vanilla JavaScript. No frameworks required.
-- **Responsive Design** – Works on desktop and mobile with adaptive button layouts.
+- **Remote Control Capable** – Send mood and audio commands via WebSocket from any Python script.
+- **Responsive Design** – Fullscreen face display that scales to any viewport size.
 
 ---
 
@@ -27,21 +28,23 @@ OctopID is an expressive, animated face system built with **SVG** and **JavaScri
 
 - [Requirements](#requirements)
 - [Installation](#installation)
+- [Quick Reference](#quick-reference)
 - [Quick Start](#quick-start)
+  - [Mode 1: Audio Server + HTML (Always Listening Mode)](#mode-1-audio-server--html-always-listening-mode)
+  - [Mode 2: Terminal Input + HTML (Interactive Control)](#mode-2-terminal-input--html-interactive-control)
 - [Configuration](#configuration)
   - [Visual Customization](#visual-customization)
   - [Audio Configuration](#audio-configuration)
   - [Expression Customization](#expression-customization)
+- [WebSocket API Reference](#websocket-api-reference)
 - [Audio Server Deep Dive](#audio-server-deep-dive)
   - [How It Works](#how-it-works)
   - [FFT Analysis Explained](#fft-analysis-explained)
   - [Frequency Band Configuration](#frequency-band-configuration)
   - [Smoothing Algorithm](#smoothing-algorithm)
-- [Usage](#usage)
 - [SVG Shape Creation Tutorial](#svg-shape-creation-tutorial)
 - [Project Structure](#project-structure)
 - [Troubleshooting](#troubleshooting)
-- [Contributing](#contributing)
 
 ---
 
@@ -49,16 +52,15 @@ OctopID is an expressive, animated face system built with **SVG** and **JavaScri
 
 ### Hardware
 
-- A computer with audio output (speakers/headphones) for "listening" mode.
-- A microphone or system audio loopback for capturing audio.
+- A computer with audio output (speakers/headphones) for audio-reactive mode.
 
 ### Software
 
 - **Frontend (face.html):**
-  - A modern web browser with SVG and WebSocket support (Chrome, Firefox, Edge, Safari).
-  - A local web server (optional but recommended).
+  - **Chromium-based browser** (Google Chrome, Microsoft Edge, Brave, etc.) - Required for WebSocket stability
+  - Modern browser with SVG and WebSocket support
 
-- **Backend (audioServer.py):**
+- **Backend (audioServer.py, terminalInput.py, demo.py):**
   - Python 3.7 or higher
   - Required Python packages:
     ```bash
@@ -81,58 +83,195 @@ cd OctopID
 ```bash
 pip install websockets soundcard numpy
 ```
-### 3. Start the Audio Server
+---
+## Quick Reference
 
-In a terminal, run:
+### Available Moods
+```
+neutral, happy, sad, angry, surprised, love, dizzy,
+doubtful, wink, scared, disappointed, innocent, worried
+```
+
+### Server Address
+```
+WebSocket: ws://localhost:8760
+```
+
+### File Run Commands
 ```bash
-python audioServer.py
+# Mode 1: Audio Server (standard mode)
+python3 audioServer.py
+chromium face.html
+
+# Mode 2: Terminal Control (interactive mode)
+python3 terminalInput.py
+chromium face.html
+
+# Demo (requires Mode 1 running)
+python3 audioServer.py
+chromium face.html
+python3 demo.py  # In separate terminal
 ```
 
-You should see:
-```
-Starting WebSocket server on ws://localhost:1940
-```
+### JSON Message Format
+```json
+// Change mood
+{"type": "mood", "mood": "happy"}
 
-### 5. Open the Face Interface
-
-Navigate to:
+// Enable/disable audio
+{"type": "audio", "command": "on"}
+{"type": "audio", "command": "off"}
 ```
-http://localhost:1940/face.html
-```
-
-Or simply open `face.html` directly in your browser if not using a server.
-
 ---
 
 ## Quick Start
 
-### Test Static Expressions (No Server Required)
+OctopID offers **two modes of operation** depending on your use case:
 
-1. Open `face.html` in any modern browser
-2. Click any expression button (Neutral, Happy, Sad, etc.)
-3. Watch the face animate with smooth transitions
-4. Eyes will automatically blink and pan around
+### Mode 1: Audio Server + HTML (Always Listening Mode)
 
-### Enable Audio-Reactive Mode
+This is the **standard mode** for audio-reactive applications. The face automatically responds to system audio and accepts remote commands.
 
-1. **Start the audio server:**
-   ```bash
-   python audioServer.py
-   ```
-   You should see: `Starting WebSocket server on ws://localhost:1940`
+**⚠️ IMPORTANT:** Both the audio server and the HTML file must be running simultaneously.
 
-2. **Open the interface:**
-   - Visit `http://localhost:1940/face.html`
-   - Click the **"Listen"** button
-   - Status should show: "Connected! Play some audio..."
+#### Step 1: Start the Audio Server
 
-3. **Play audio on your computer:**
-   - Music, YouTube, TTS, any system audio
-   - The mouth will animate in real-time matching the audio intensity
+In a terminal, run:
+```bash
+python3 audioServer.py
+```
 
-4. **To stop listening:**
-   - Click any other expression button
-   - Or close the browser tab (server keeps running)
+You should see:
+```
+Starting WebSocket server on ws://localhost:8760
+Waiting for client connections...
+```
+
+#### Step 2: Open the Face Interface
+
+**Using Chromium (Required):**
+```bash
+chromium face.html
+
+# Or simply open face.html in your Chromium browser
+```
+
+The face will automatically:
+- Connect to the WebSocket server
+- Display in fullscreen
+- Start responding to system audio
+
+#### Step 3: Test Audio Response
+
+1. Play any audio on your computer (music, YouTube, TTS, etc.)
+2. The mouth will animate in real-time matching the audio intensity
+3. Leave both the server and browser running
+
+#### Step 4: Send Remote Commands (Optional)
+
+While the server and face are running, you can send commands from another terminal:
+
+**Option A: Run the demo script** to see an automated demonstration:
+```bash
+python3 demo.py
+```
+
+The demo will:
+1. Enable audio for 8 seconds
+2. Disable audio
+3. Re-enable audio for 2 seconds
+4. Cycle through all 13 moods (2 seconds each)
+5. Disable audio and disconnect
+
+**Demo Output Example:**
+```
+Successfully connected to the OctopID server.
+------------------------------
+
+Testing the audio-reactive 'listening' mode...
+Turning audio ON. Play some speech audio!
+Sent command: {'type': 'audio', 'command': 'on'}
+
+Cycling through some moods...
+Sent command: {'type': 'mood', 'mood': 'neutral'}
+Sent command: {'type': 'mood', 'mood': 'happy'}
+...
+
+Demo finished successfully!
+```
+
+**Option B: Create your own control script** (see [WebSocket API Reference](#websocket-api-reference) for examples)
+
+---
+
+### Mode 2: Terminal Input + HTML (Interactive Control)
+
+This mode provides **manual control** via terminal commands. Ideal for testing, live performances, and interactive demonstrations.
+
+**⚠️ IMPORTANT:** When using `terminalInput.py`, you do NOT need to run `audioServer.py` or `demo.py`.
+
+#### Step 1: Start Terminal Input Server
+
+In a terminal, run:
+```bash
+python3 terminalInput.py
+```
+
+You should see:
+```
+Starting WebSocket server on ws://localhost:8760
+Waiting for client connection...
+```
+
+#### Step 2: Open the Face Interface
+
+**Using Chromium:**
+```bash
+chromium face.html
+```
+
+Once connected, you'll see:
+```
+Client connected! You can now send commands.
+
+--- Available Commands ---
+Moods: neutral, happy, sad, angry, surprised, love, dizzy, doubtful, wink, scared, disappointed, innocent, worried
+Actions: audio on, audio off
+Type 'exit' to quit.
+
+Enter command:
+```
+
+#### Step 3: Send Commands
+
+Type any of the following commands:
+
+**Mood Commands:**
+```bash
+Enter command: happy
+--> Sending command: 'happy'
+
+Enter command: sad
+--> Sending command: 'sad'
+
+Enter command: angry
+--> Sending command: 'angry'
+```
+
+**Audio Commands:**
+```bash
+Enter command: audio on
+--> Audio streaming ENABLED.
+
+Enter command: audio off
+--> Audio streaming DISABLED. Sending reset signal.
+```
+
+**Exit:**
+```bash
+Enter command: exit
+Exiting command loop.
+```
 
 ---
 
@@ -151,9 +290,6 @@ Open `face.html` and locate the `:root` section in the `<style>` block:
     --face-color: #40D4D6;        /* Primary face/eye color (cyan) */
     --background-color: black;    /* Page background - change to white for light mode */
     --text-color: #f0f0f0;        /* Status text color */
-    --button-bg: #2c2c2c;         /* Button background color */
-    --button-hover-bg: #3c3c3c;   /* Button hover state */
-    --shadow-color: rgba(0, 0, 0, 0.2); /* Shadow effects */
 }
 ```
 
@@ -163,21 +299,6 @@ Open `face.html` and locate the `:root` section in the `<style>` block:
     --face-color: #2C3E50;
     --background-color: #ECF0F1;
     --text-color: #2C3E50;
-    --button-bg: #BDC3C7;
-    --button-hover-bg: #95A5A6;
-    --shadow-color: rgba(0, 0, 0, 0.1);
-}
-```
-
-#### **Spacing and Layout**
-
-```css
-.container {
-    gap: 20px;  /* Space between face, buttons, and status (increase for more breathing room) */
-}
-
-.controls {
-    gap: 10px;  /* Space between buttons (reduce for tighter layout) */
 }
 ```
 
@@ -208,7 +329,7 @@ setInterval(blink, Math.random() * 3000 + 1000);   // 1-4 seconds
 
 The audio system is optimized for **Spanish language speech patterns** with specific frequency range tuning.
 
-#### **Frequency Ranges (audioServer.py)**
+#### **Frequency Ranges (audioServer.py / terminalInput.py)**
 
 Spanish speech emphasizes mid-range frequencies where most vowels and consonants occur:
 
@@ -242,20 +363,16 @@ Control how reactive the mouth is to audio:
 ```python
 # Normalize to 0-1 scale (divisors control sensitivity)
 normalizedBass = min(bassEnergy / 30.0, 1.0)   # Lower = more sensitive
-normalizedMids = min(midEnergy / 20.0, 1.0)    # Tuned for Spanish voice
-normalizedHighs = min(highEnergy / 35.0, 1.0)
 ```
 
 **Make mouth more reactive:**
 ```python
 normalizedBass = min(bassEnergy / 20.0, 1.0)  # From 30 to 20
-normalizedMids = min(midEnergy / 15.0, 1.0)   # From 20 to 15
 ```
 
 **Make mouth less reactive (for loud environments):**
 ```python
 normalizedBass = min(bassEnergy / 50.0, 1.0)
-normalizedMids = min(midEnergy / 40.0, 1.0)
 ```
 
 #### **Smoothing (Reduce Jitter)**
@@ -294,7 +411,7 @@ const animateMouth = () => {
 
 ### Expression Customization
 
-Each expression is defined in the `expressions` object in `face.html`.
+Each expression is defined in the `moods` object in `face.html`.
 
 #### **Expression Structure**
 
@@ -304,14 +421,23 @@ expressionName: {
     mouthPath: 'SVG path data',  // Mouth shape (see SVG tutorial below)
     leftEyePath: 'SVG path data', // Left eye shape
     rightEyePath: 'SVG path data', // Right eye shape
-    icon: '<svg>...</svg>'        // Optional: inner eye icon (pupils, etc.)
 }
+```
+
+#### **Available Moods**
+
+```javascript
+const AVAILABLE_MOODS = [
+    'neutral', 'happy', 'sad', 'angry', 'surprised', 'love', 'dizzy',
+    'doubtful', 'wink', 'scared', 'disappointed', 'innocent', 'worried'
+];
 ```
 
 #### **Creating a New Expression**
 
 **Example: Adding a "sleepy_smiling" expression**
 
+1. Add to the `moods` object in `face.html`:
 ```javascript
 sleepy_smiling: {
     color: '#FFB84D',  // Warm orange
@@ -321,9 +447,13 @@ sleepy_smiling: {
 }
 ```
 
-Add a button to trigger it:
-```html
-<button onclick="setExpression('sleepy_smiling')">Sleepy Smile</button>
+2. Add to `AVAILABLE_MOODS` in Python files:
+```python
+AVAILABLE_MOODS = (
+    'neutral', 'happy', 'sad', 'angry', 'surprised', 'love', 'dizzy',
+    'doubtful', 'wink', 'scared', 'disappointed', 'innocent', 'worried',
+    'sleepy_smiling'  # Add your new mood here
+)
 ```
 
 #### **Color Psychology Guide**
@@ -340,11 +470,164 @@ Add a button to trigger it:
 
 ---
 
+## WebSocket API Reference
+
+All communication between clients and the server uses JSON messages over WebSocket.
+
+### Server Address
+
+```
+ws://localhost:8760
+```
+
+### Message Format
+
+All messages are JSON objects with a `type` field that determines the action.
+
+---
+
+### Client → Server Messages
+
+#### **1. Change Mood**
+
+```json
+{
+    "type": "mood",
+    "mood": "happy"
+}
+```
+
+**Parameters:**
+- `type` (string): Must be `"mood"`
+- `mood` (string): One of the available moods listed above
+
+**Example (Python):**
+```python
+import asyncio
+import websockets
+import json
+
+async def send_mood():
+    async with websockets.connect("ws://localhost:8760") as ws:
+        await ws.send(json.dumps({"type": "mood", "mood": "happy"}))
+
+asyncio.run(send_mood())
+```
+
+---
+
+#### **2. Enable Audio Streaming**
+
+```json
+{
+    "type": "audio",
+    "command": "on"
+}
+```
+
+**Parameters:**
+- `type` (string): Must be `"audio"`
+- `command` (string): `"on"` to enable, `"off"` to disable
+
+**Example (Python):**
+```python
+async def enable_audio():
+    async with websockets.connect("ws://localhost:8760") as ws:
+        await ws.send(json.dumps({"type": "audio", "command": "on"}))
+```
+
+---
+
+#### **3. Disable Audio Streaming**
+
+```json
+{
+    "type": "audio",
+    "command": "off"
+}
+```
+
+---
+
+### Server → Client Messages
+
+#### **1. Mood Update**
+
+```json
+{
+    "type": "mood",
+    "mood": "happy"
+}
+```
+
+Sent to all connected clients when any client changes the mood.
+
+---
+
+#### **2. Audio Data**
+
+```json
+{
+    "type": "audio",
+    "bass": 0.75
+}
+```
+
+**Parameters:**
+- `type` (string): Always `"audio"`
+- `bass` (float): Normalized bass energy level (0.0 to 1.0)
+
+Sent continuously (~100 times per second) when audio streaming is enabled.
+
+---
+
+### Example: Complete Control Script
+
+```python
+import asyncio
+import websockets
+import json
+
+async def control_octopid():
+    uri = "ws://localhost:8760"
+    
+    async with websockets.connect(uri) as websocket:
+        # Change to happy mood
+        await websocket.send(json.dumps({
+            "type": "mood",
+            "mood": "happy"
+        }))
+        await asyncio.sleep(2)
+        
+        # Enable audio
+        await websocket.send(json.dumps({
+            "type": "audio",
+            "command": "on"
+        }))
+        await asyncio.sleep(5)
+        
+        # Disable audio
+        await websocket.send(json.dumps({
+            "type": "audio",
+            "command": "off"
+        }))
+        
+        # Change to sad mood
+        await websocket.send(json.dumps({
+            "type": "mood",
+            "mood": "sad"
+        }))
+
+asyncio.run(control_octopid())
+```
+
+---
+
 ## Audio Server Deep Dive
 
 ### How It Works
 
-The `audioServer.py` script creates a WebSocket server that performs real-time audio analysis and streams frequency data to connected clients. Here's the complete pipeline:
+The audio server creates a WebSocket server that performs real-time audio analysis and streams frequency data to connected clients. Here's the complete pipeline:
 
 ```
 System Audio → Audio Capture → FFT Analysis → Frequency Band Extraction → 
@@ -356,14 +639,19 @@ Normalization → Smoothing → WebSocket Stream → Frontend Animation
 ```python
 # 1. WebSocket Server Setup
 async def mainAsync():
-    # Creates server on localhost:1940
-    async with websockets.serve(audioStreamHandler, "localhost", 1940):
+    # Creates server on localhost:8760
+    async with websockets.serve(client_handler, "localhost", 8760):
         await asyncio.Future()  # Run forever
 
 # 2. Client Connection Handler
-async def audioStreamHandler(websocket):
-    # Each client gets its own audio stream
-    # Captures audio → Analyzes → Sends JSON data
+async def client_handler(websocket):
+    # Each client gets added to ACTIVE_CLIENTS set
+    # Processes incoming commands (mood changes, audio on/off)
+
+# 3. Audio Processing Loop
+async def process_audio():
+    # Runs continuously in background
+    # Captures audio → Analyzes → Broadcasts to all clients
 ```
 
 #### Data Flow Diagram
@@ -389,10 +677,8 @@ async def audioStreamHandler(websocket):
            │
            ▼
 ┌─────────────────────┐
-│ Frequency Bands     │ Extract energy in 3 ranges:
-│ 60-250 Hz (bass)    │ - Bass: body, warmth
-│ 251-2000 Hz (mids)  │ - Mids: voice, vowels ← MOST IMPORTANT
-│ 2001-6000 Hz (high) │ - Highs: sibilants, consonants
+│ Frequency Bands     │ Extract energy in bass range:
+│ 60-250 Hz (bass)    │ - Bass: body, warmth, vowel fundamentals
 └──────────┬──────────┘
            │
            ▼
@@ -409,12 +695,12 @@ async def audioStreamHandler(websocket):
            │
            ▼
 ┌─────────────────────┐
-│  JSON Encoding      │ {"bass": 0.7, "mids": 0.5, "highs": 0.3}
+│  JSON Encoding      │ {"type": "audio", "bass": 0.7}
 └──────────┬──────────┘
            │
            ▼
 ┌─────────────────────┐
-│  WebSocket Send     │ Streams to frontend @ ~100fps
+│  WebSocket Broadcast│ Streams to all clients @ ~100fps
 └──────────┬──────────┘
            │
            ▼
@@ -476,32 +762,20 @@ fftData:  [0.01, 0.02, 0.05, 0.1, ..., 0.95, 0.1,  ...]  # Magnitude
 
 #### Why These Specific Ranges?
 
-Human speech occupies **80-8000 Hz**, but not evenly:
+Human speech occupies **80-8000 Hz**, but not evenly. For mouth animation, we focus on **bass frequencies (60-250 Hz)** which capture:
 
-| Band | Range | Contains | Spanish Characteristics |
-|------|-------|----------|------------------------|
-| **Bass** | 60-250 Hz | Fundamental frequencies, vocal warmth | Vowels like "o", "u" have energy here |
-| **Mids** | 251-2000 Hz | **CORE VOICE RANGE** | Spanish vowels (a, e, i, o, u) strongest here. Most intelligibility. |
-| **Highs** | 2001-6000 Hz | Consonants, sibilants | "s", "c", "z", "t" sounds |
+- Fundamental frequencies of vowels
+- Body and warmth of voice
+- Overall speech energy/volume
 
-#### Spanish vs English Optimization
-
-**Spanish** has clear, distinct vowels with strong mid-range energy:
-```python
-midRangeStart = 251
-midRangeEnd = 2000     # Captures vowel formants perfectly
-```
-
-**English** has more high-frequency content (aspirated consonants):
-```python
-midRangeStart = 300
-midRangeEnd = 3000     # Extends higher for "sh", "th", "h" sounds
-```
+| Band | Range | Contains |
+|------|-------|----------|
+| **Bass** | 60-250 Hz | Fundamental frequencies, vocal warmth, vowel energy |
 
 #### Band Extraction Code
 
 ```python
-# Find which FFT bins fall into each frequency range
+# Find which FFT bins fall into the bass frequency range
 bassIndices = np.where((fftFreq >= 60) & (fftFreq <= 250))
 # Returns: array of indices where condition is True
 
@@ -537,8 +811,8 @@ normalizedBass = min(bassEnergy / 30.0, 1.0)
 | Divisor | Effect | Use Case |
 |---------|--------|----------|
 | **10** | Very sensitive | Quiet speech, ASMR, soft music |
-| **20** | Balanced (default for mids) | Normal conversation, podcasts |
-| **30** | Less sensitive (default for bass) | Music with heavy bass, loud environments |
+| **20** | Balanced | Normal conversation, podcasts |
+| **30** | Less sensitive (default) | Music with bass, louder environments |
 | **50** | Minimal | Clubs, concerts, yelling |
 
 **Formula:**
@@ -581,7 +855,7 @@ Smoothed (5): [0.1, 0.5, 0.4, 0.5, 0.46, 0.58, ...] ← Smooth!
 ### Complete Code Flow
 
 ```python
-async def audioStreamHandler(websocket):
+async def process_audio():
     bass_history = deque(maxlen=5)  # Smoothing buffer
     
     # Open audio capture from system speakers
@@ -591,6 +865,10 @@ async def audioStreamHandler(websocket):
     ).recorder(samplerate=44100, channels=1) as mic:
         
         while True:
+            if not is_audio_enabled:
+                await asyncio.sleep(0.1)
+                continue
+                
             # 1. CAPTURE: Get 1024 audio samples (~23ms of audio)
             data = mic.record(numframes=1024)
             
@@ -598,10 +876,9 @@ async def audioStreamHandler(websocket):
             fftData = np.fft.rfft(data[:, 0])
             fftFreq = np.fft.rfftfreq(len(data[:, 0]), 1.0 / 44100)
             
-            # 3. EXTRACT: Find energy in each frequency band
+            # 3. EXTRACT: Find energy in bass frequency band
             bassIndices = np.where((fftFreq >= 60) & (fftFreq <= 250))
             bassEnergy = np.mean(np.abs(fftData[bassIndices]))
-            # (Repeat for mids and highs...)
             
             # 4. NORMALIZE: Scale to 0-1
             normalizedBass = min(bassEnergy / 30.0, 1.0)
@@ -610,13 +887,9 @@ async def audioStreamHandler(websocket):
             bass_history.append(normalizedBass)
             smoothed_bass = np.mean(bass_history)
             
-            # 6. STREAM: Send to frontend
-            payload = {
-                "bass": smoothed_bass,
-                "mids": normalizedMids,
-                "highs": normalizedHighs
-            }
-            await websocket.send(json.dumps(payload))
+            # 6. STREAM: Send to all clients
+            payload = {"type": "audio", "bass": smoothed_bass}
+            await broadcast(json.dumps(payload))
             await asyncio.sleep(0.01)  # ~100 updates/second
 ```
 
@@ -638,94 +911,6 @@ async def audioStreamHandler(websocket):
 ```
 Audio Output → [23ms capture] → [5ms FFT] → [5ms network] → Frontend
 Total: ~33ms (imperceptible to humans, <50ms threshold)
-```
-
----
-
-### Advanced Configuration Examples
-
-#### Ultra-Responsive (Music Visualizer)
-
-```python
-# audioServer.py
-chunkSize = 512          # From 1024 → faster updates
-bass_history = deque(maxlen=2)  # Minimal smoothing
-normalizedBass = min(bassEnergy / 15.0, 1.0)  # More sensitive
-
-# face.html
-point + (targetPoints[i] - point) * 0.7  # Snappier interpolation
-```
-
-#### Ultra-Smooth (Meditation/Ambient)
-
-```python
-# audioServer.py
-chunkSize = 2048         # From 1024 → more frequency resolution
-bass_history = deque(maxlen=15)  # Heavy smoothing
-normalizedBass = min(bassEnergy / 40.0, 1.0)  # Less reactive
-
-# face.html
-point + (targetPoints[i] - point) * 0.1  # Dreamy interpolation
-```
-
-#### Voice Activity Detection (Speech Only)
-
-```python
-# Add silence detection
-midEnergy = np.mean(np.abs(fftData[midIndices]))
-if midEnergy < 5.0:  # Threshold for silence
-    payload = {"bass": 0.0, "mids": 0.0, "highs": 0.0}
-else:
-    # Normal processing...
-```
-
----
-
-## Usage
-
-### **1. Manual Expression Control**
-
-Click any button to change the expression:
-- **Neutral** - Default calm state
-- **Happy** - Positive, friendly
-- **Sad** - Melancholic, down
-- **Angry** - Aggressive, frustrated
-- **Surprised** - Shocked, amazed
-- **Love** - Affectionate (heart eyes!)
-- **Dizzy** - Disoriented (spiral eyes)
-- **Thinking** - Contemplative
-- **Sleepy** - Tired, drowsy
-- **Wink** - Playful, flirty
-- **Scared** - Fearful, anxious
-- **Confused** - Puzzled, uncertain
-- **Sick** - Unwell, nauseous (X eyes)
-- **Innocent** - Pure, naive
-- **Worried** - Anxious, stressed
-
-### **2. Audio-Reactive Mode**
-
-1. Start the Python server: `python audioServer.py`
-2. Click the **"Listen"** button
-3. Play audio on your computer (music, TTS, video, etc.)
-4. The mouth will animate in sync with the audio
-
-**Note:** On Windows/macOS, you may need to configure a virtual audio cable to capture system audio. On Linux, use `pavucontrol` to redirect audio.
-
-### **3. Programmatic Control**
-
-**From Browser Console:**
-```javascript
-setExpression('happy');
-setExpression('listening');
-```
-
-**From External JavaScript:**
-```javascript
-window.setExpression = (name) => {
-    window.dispatchEvent(new CustomEvent('expressionChange', { 
-        detail: { expression: name } 
-    }));
-};
 ```
 
 ---
@@ -761,7 +946,7 @@ An SVG path is a string of commands that tell the browser how to draw a line:
 
 ### **Coordinate System**
 
-In our face.html, the viewBox is `"0 0 200 200"`:
+In face.html, the viewBox is `"0 0 200 200"`:
 - X axis: 0 (left) to 200 (right)
 - Y axis: 0 (top) to 200 (bottom)
 - Center: (100, 100)
@@ -865,49 +1050,75 @@ Create a test SVG to preview:
 ```
 OctopID/
 ├── face.html           # Main frontend interface (HTML + CSS + JavaScript)
-│                       # - SVG face rendering
-│                       # - Expression definitions (15 emotions)
+│                       # - SVG face rendering (fullscreen)
+│                       # - Expression definitions (13 moods)
 │                       # - Eye animation logic (panning, blinking)
 │                       # - WebSocket client for audio sync
 │                       # - Mouth interpolation algorithm
+│                       # - Always-listening mode (auto-connects)
 │
 ├── audioServer.py      # Backend WebSocket server for audio capture
 │                       # - Audio loopback capture (soundcard)
 │                       # - FFT frequency analysis (NumPy)
-│                       # - Frequency band extraction (bass/mids/highs)
+│                       # - Bass frequency band extraction (60-250 Hz)
 │                       # - Normalization and smoothing
-│                       # - Real-time WebSocket streaming
+│                       # - Real-time WebSocket broadcasting
+│                       # - Multi-client support
+│                       # - Command processing (mood/audio control)
+│
+├── terminalInput.py    # Interactive terminal control server
+│                       # - All features of audioServer.py
+│                       # - Plus: terminal command interface
+│                       # - Type mood names to change expression
+│                       # - Type "audio on/off" to control streaming
+│                       # - Standalone (no need for audioServer.py)
+│
+├── demo.py             # Automated demonstration script
+│                       # - Connects to audioServer.py
+│                       # - Cycles through all features
+│                       # - Shows how to use WebSocket API
+│                       # - Perfect for learning JSON message format
 │
 └── README.md           # Complete documentation (this file)
-                        # - Installation guide
-                        # - Configuration reference
-                        # - Audio pipeline deep dive
-                        # - SVG path creation tutorial
-                        # - Troubleshooting guide
 ```
 
 ### File Responsibilities
 
-#### face.html (Frontend - 500+ lines)
-- **SVG Rendering:** 200x200 viewBox, 2 eyes, 1 mouth
-- **Expression System:** 15 pre-defined emotion states
+#### face.html (Frontend - 300+ lines)
+- **SVG Rendering:** 200x200 viewBox, 2 eyes, 1 mouth, fullscreen display
+- **Expression System:** 13 pre-defined emotion states
 - **Animation Engine:**
   - Eye panning: Random translation every 3-7 seconds
   - Blinking: Scale eyes to 0.1 height every 2-7 seconds
   - Mouth interpolation: 60fps smooth transitions
-- **WebSocket Client:** Connects to `ws://localhost:1940`
+- **WebSocket Client:** Auto-connects to `ws://localhost:8760`
 - **Audio Response:** Maps bass energy (0-1) to mouth openness (0-40px)
+- **Always Listening:** No manual controls, responds to server commands
 
-#### audioServer.py (Backend - 100 lines)
-- **WebSocket Server:** Async server on port 1940
+#### audioServer.py (Backend - 130 lines)
+- **WebSocket Server:** Async server on port 8760
+- **Multi-Client Support:** Broadcasts to all connected clients
 - **Audio Capture:** System audio loopback (44100 Hz, mono)
 - **FFT Analysis:** 1024-sample chunks, 513 frequency bins
-- **Band Extraction:**
-  - Bass: 60-250 Hz
-  - Mids: 251-2000 Hz (Spanish vowel range)
-  - Highs: 2001-6000 Hz
+- **Band Extraction:** Bass: 60-250 Hz
 - **Smoothing:** 5-frame moving average for bass
 - **Streaming:** JSON payloads @ ~100 Hz
+- **Command Processing:** Receives mood and audio control commands
+
+#### terminalInput.py (Interactive Server - 200+ lines)
+- **All features of audioServer.py**
+- **Terminal Interface:** Type commands directly
+- **Connection Status:** Visual loader while waiting for client
+- **Command Validation:** Only accepts valid mood names
+- **Help Menu:** Lists all available commands
+- **Graceful Exit:** Type "exit" to quit
+
+#### demo.py (Demo Script - 80 lines)
+- **WebSocket Client:** Connects to audioServer.py
+- **Automated Sequence:** Tests all features in order
+- **API Examples:** Shows proper JSON message format
+- **Learning Tool:** Copy code patterns for your own scripts
+- **Documented:** Clear comments explain each step
 
 ---
 
@@ -915,39 +1126,63 @@ OctopID/
 
 ### **Face Not Displaying**
 
+- **Check Browser Compatibility:**
+  - Use Chromium-based browsers (Chrome, Edge, Brave)
+  - Avoid Firefox or Safari for best WebSocket stability
+
 - **Check Browser Console (F12)** for JavaScript errors
-- Ensure SVG viewBox is correct: `viewBox="0 0 200 200"`
-- Verify all path data is properly quoted
 
-### **Audio Not Working (Listening Mode)**
+- **Verify file location:**
+  ```bash
+  # Must open face.html in same directory as Python files
+  ls face.html audioServer.py  # Should list both files
+  ```
 
-**Error: "Connection Error. Is the Python server running?"**
-- Start the server: `python audioServer.py`
-- Check server output for errors
-- Verify WebSocket address: `ws://localhost:1940`
+---
+
+### **Audio Not Working**
+
+**Error: "Connection Error" or face not responding**
+
+1. **Verify both server and browser are running:**
+   ```bash
+   # Terminal 1: Check if server is running
+   python3 audioServer.py
+   # Should show: "Starting WebSocket server on ws://localhost:8760"
+   
+   # Terminal 2 or Browser: Open face.html in Chromium
+   chromium face.html
+   ```
+
+2. **Check WebSocket connection in browser:**
+   - Open Developer Tools (F12)
+   - Go to Console tab
+   - Should see: "Successfully connected to the WebSocket server"
+   - If not, check Network tab → WS → verify connection to localhost:8760
+
+3. **Verify port is not in use:**
+   ```bash
+   lsof -i:8760
+   ```
 
 **Mouth Not Moving Despite Audio Playing**
+
 - **Check audio device capture:**
   ```python
-  # In audioServer.py, print available devices:
+  # In Python console, list available devices:
+  import soundcard as sc
   speakers = sc.all_speakers()
   for speaker in speakers:
       print(speaker.name)
   ```
-- Update the capture device:
+
+- **Update the capture device in audioServer.py or terminalInput.py:**
   ```python
   with sc.get_microphone(
       id=str(sc.default_speaker().name),  # Change to your device name
       include_loopback=True
   ).recorder(samplerate=sampleRate, channels=1) as mic:
   ```
-
-**Windows/macOS Audio Capture**
-- Install virtual audio cable software:
-  - Windows: [VB-CABLE](https://vb-audio.com/Cable/)
-  - macOS: [BlackHole](https://github.com/ExistentialAudio/BlackHole)
-- Set it as your default output device
-- Update `audioServer.py` to capture from the virtual cable
 
 **Linux Audio Capture**
 ```bash
@@ -958,15 +1193,17 @@ pactl list short sources
 # Example: alsa_output.pci-0000_00_1f.3.analog-stereo.monitor
 ```
 
+---
+
 ### **Mouth Too Sensitive or Not Sensitive Enough**
 
-**Adjust normalization divisors** in `audioServer.py`:
+**Adjust normalization divisors** in `audioServer.py` or `terminalInput.py`:
 ```python
 # Less sensitive (for loud environments)
-normalizedMids = min(midEnergy / 40.0, 1.0)  # Increase divisor
+normalizedBass = min(bassEnergy / 40.0, 1.0)  # Increase divisor
 
 # More sensitive (for quiet speech)
-normalizedMids = min(midEnergy / 10.0, 1.0)  # Decrease divisor
+normalizedBass = min(bassEnergy / 15.0, 1.0)  # Decrease divisor
 ```
 
 **Adjust interpolation** in `face.html`:
@@ -978,6 +1215,8 @@ point + (targetPoints[i] - point) * 0.5  // From 0.3 to 0.5
 point + (targetPoints[i] - point) * 0.1  // From 0.3 to 0.1
 ```
 
+---
+
 ### **Mouth Opens But Stays Open (Doesn't Close)**
 
 **Check talking threshold** in `face.html`:
@@ -988,12 +1227,14 @@ const talkingThreshold = 0.1;  // Lower = more sensitive to quiet sounds
 
 **Verify normalization** - mouth should close when bass < threshold:
 ```python
-# audioServer.py - print to debug
-print(f"Bass: {smoothed_bass:.2f}, Mids: {normalizedMids:.2f}")
+# audioServer.py - add debug prints
+print(f"Bass: {smoothed_bass:.2f}")
 # Should see values near 0.0 during silence
 ```
 
-### **Audio Server Won't Start**
+---
+
+### **Server Won't Start**
 
 **Error: "No module named 'soundcard'"**
 ```bash
@@ -1002,13 +1243,8 @@ pip install soundcard numpy websockets
 
 **Error: "Address already in use"**
 ```bash
-# Kill existing process on port 1940
-# Linux/Mac:
-lsof -ti:1940 | xargs kill -9
-
-# Windows:
-netstat -ano | findstr :1940
-taskkill /PID <PID> /F
+# Kill existing process on port 8760
+lsof -ti:8760 | xargs kill -9
 ```
 
 **Error: "No speakers found"**
@@ -1018,36 +1254,59 @@ import soundcard as sc
 print("Speakers:", [s.name for s in sc.all_speakers()])
 print("Microphones:", [m.name for m in sc.all_microphones()])
 
-# Update audioServer.py with correct device name
+# Update Python file with correct device name
 ```
+
+---
 
 ### **WebSocket Connection Fails**
 
 **Error: "Connection refused"**
-- Ensure server is running: `python audioServer.py`
-- Check server address in `face.html` matches: `ws://localhost:1940`
-- Try `ws://127.0.0.1:1940` if localhost doesn't resolve
+- Ensure server is running: `python3 audioServer.py`
+- Check server address in `face.html` matches: `ws://localhost:8760`
+- Try `ws://127.0.0.1:8760` if localhost doesn't resolve
 
 **Error: "Mixed content" (HTTPS page)**
 - Can't use `ws://` from `https://` pages
 - Either:
   - Use `wss://` (requires SSL certificate)
   - Serve page via `http://` instead
-  - Run locally (file:// protocol may have CORS issues)
+  - Open file directly (file:// protocol)
 
-### **Eyes Blinking During Wide-Eyed Expressions**
+---
 
-Check the `isWideEyed` flag in `setExpression()`:
-```javascript
-isWideEyed = (name === 'surprised' || name === 'scared');
-```
+### **Demo Script Issues**
 
-Add your expression to prevent blinking:
-```javascript
-isWideEyed = (name === 'surprised' || name === 'scared' || name === 'yourExpression');
-```
+**Error: "Connection to ws://localhost:8760 refused"**
+- Make sure `audioServer.py` is running FIRST
+- Then run `demo.py` in a separate terminal
+- The demo script needs an active server to connect to
 
-### **Poor Performance**
+**Demo runs but face doesn't change**
+- Verify `face.html` is open in Chromium
+- Check browser console for connection messages
+- Ensure all three components are running:
+  1. audioServer.py (terminal 1)
+  2. face.html (browser)
+  3. demo.py (terminal 2)
+
+---
+
+### **Terminal Input Issues**
+
+**Commands not working**
+- Check spelling: commands are case-sensitive (lowercase only)
+- Valid moods: `neutral`, `happy`, `sad`, `angry`, `surprised`, `love`, `dizzy`, `doubtful`, `wink`, `scared`, `disappointed`, `innocent`, `worried`
+- Valid audio commands: `audio on`, `audio off`
+
+**"Waiting for client connection..." stuck**
+- Open `face.html` in Chromium browser
+- The terminal will detect the connection automatically
+- If stuck, restart `terminalInput.py` and refresh browser
+
+---
+
+### **Performance Issues**
 
 - **Reduce animation frame rate:**
   ```javascript
@@ -1057,26 +1316,30 @@ isWideEyed = (name === 'surprised' || name === 'scared' || name === 'yourExpress
   ```
 
 - **Simplify eye paths** (use fewer curves)
-- **Disable panning/blinking** temporarily to test
-- **Increase WebSocket sleep** in `audioServer.py`:
+
+- **Increase WebSocket sleep** in Python files:
   ```python
   await asyncio.sleep(0.02)  # 50 Hz instead of 100 Hz
   ```
+
+---
 
 ### **Audio Debugging Checklist**
 
 1. **Server Status:**
    ```bash
-   python audioServer.py
-   # Should print: "Starting WebSocket server on ws://localhost:1940"
+   python3 audioServer.py
+   # Should print: "Starting WebSocket server on ws://localhost:8760"
+   # Should print: "Waiting for client connections..."
    # No error messages
    ```
 
 2. **Client Connection:**
+   - Open Chromium (not Firefox/Safari)
+   - Open `face.html`
    - Open browser console (F12)
-   - Click "Listen" button
    - Should see: "Successfully connected to the WebSocket server"
-   - Check Network tab → WS → should show connection
+   - Check Network tab → WS → should show active connection
 
 3. **Audio Flow:**
    ```python
@@ -1088,165 +1351,14 @@ isWideEyed = (name === 'surprised' || name === 'scared' || name === 'yourExpress
 4. **Mouth Movement:**
    ```javascript
    // Add in face.html animateMouth()
-   console.log('Bass:', audioData.bass, 'Mouth:', mouthOpenness);
+   console.log('Bass:', audioData.bass);
    // Should show changing values during audio
    ```
 
-### **Platform-Specific Issues**
-
-#### **Windows:**
-- May need virtual audio cable: [VB-CABLE](https://vb-audio.com/Cable/)
-- Set VB-CABLE as default playback device
-- Update `audioServer.py`:
-  ```python
-  with sc.get_microphone(id="CABLE Output", include_loopback=True)
-  ```
-
-#### **macOS:**
-- Install [BlackHole](https://github.com/ExistentialAudio/BlackHole)
-- Create Multi-Output Device in Audio MIDI Setup
-- Route audio through BlackHole
-
-#### **Linux:**
-- Use PulseAudio/PipeWire monitor sources
-- List sources: `pactl list short sources`
-- Use monitor source name directly:
-  ```python
-  # Example: "alsa_output.pci-0000_00_1f.3.analog-stereo.monitor"
-  with sc.get_microphone(id="YOUR_MONITOR_SOURCE", include_loopback=True)
-  ```
-
 ---
 
-## Contributing
+## Credits
 
-Contributions are welcome! Here are some ideas:
-
-- **New Expressions** - Add more emotions (excited, bored, mischievous)
-- **Lip Sync Modes** - Different mouth animations for singing vs speaking
-- **Eye Tracking** - Make eyes follow mouse cursor
-- **Expression Sequences** - Chain expressions for storytelling
-- **Voice Activity Detection** - Auto-detect speech vs silence
-- **Multi-language Optimization** - Frequency tuning for other languages
-- **Phoneme Detection** - Map specific sounds to mouth shapes
-- **Emotion Transitions** - Smooth blending between expressions
-- **Customizable Skins** - User-uploadable face designs
-- **Recording Mode** - Save expression sequences as animations
-
-### **How to Contribute**
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/new-expression`
-3. Make your changes
-4. Test thoroughly (all expressions + audio mode)
-5. Commit: `git commit -m 'Add excited expression'`
-6. Push: `git push origin feature/new-expression`
-7. Open a Pull Request
-
-### **Code Style Guidelines**
-
-- **JavaScript:** Use descriptive variable names, add comments for complex logic
-- **Python:** Follow PEP 8 style guide
-- **SVG Paths:** Include comments explaining what each path draws
-- **Expressions:** Document color choices and emotional intent
-
-### **Testing Checklist**
-
-Before submitting a PR, verify:
-- [ ] All 15 static expressions work correctly
-- [ ] Eyes blink and pan smoothly
-- [ ] Audio mode connects and animates mouth
-- [ ] No console errors (F12 in browser)
-- [ ] Server starts without errors
-- [ ] Code is commented and readable
-- [ ] README updated if adding new features
+**Made with care for Octopy® by TheBIGduke - Kaléin Tamaríz, October 2025**
 
 ---
-
-## Advanced Topics
-
-### **Custom Audio Processing**
-
-You can modify `audioServer.py` to detect specific audio features:
-
-#### **Beat Detection**
-```python
-# Detect sudden increases in bass energy
-if smoothed_bass > last_bass * 1.5:  # 50% jump
-    payload["beat"] = True
-    # Trigger special animation in frontend
-```
-
-#### **Pitch Detection**
-```python
-# Find dominant frequency
-dominant_freq_idx = np.argmax(np.abs(fftData))
-dominant_freq = fftFreq[dominant_freq_idx]
-
-if 200 < dominant_freq < 400:
-    payload["pitch"] = "low"
-elif 400 < dominant_freq < 800:
-    payload["pitch"] = "mid"
-else:
-    payload["pitch"] = "high"
-```
-
-#### **Volume Normalization**
-```python
-# Auto-adjust to ambient volume
-max_volume = max(bass_history)
-if max_volume > 0:
-    normalized = smoothed_bass / max_volume  # Relative to max
-```
-
-### **Frontend Extensions**
-
-#### **Mouse-Following Eyes**
-```javascript
-document.addEventListener('mousemove', (e) => {
-    const rect = document.getElementById('face').getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-    
-    // Calculate offset towards mouse
-    const panX = (mouseX - 100) * 0.1;  // Scale factor
-    const panY = (mouseY - 100) * 0.1;
-    
-    eyes.forEach(eye => {
-        eye.style.transform = `translate(${panX}px, ${panY}px) scaleY(1)`;
-    });
-});
-```
-
-#### **Expression Queue**
-```javascript
-const expressionQueue = ['happy', 'surprised', 'happy', 'neutral'];
-let queueIndex = 0;
-
-setInterval(() => {
-    setExpression(expressionQueue[queueIndex]);
-    queueIndex = (queueIndex + 1) % expressionQueue.length;
-}, 3000);  // Change every 3 seconds
-```
-
-#### **Gradient Color Transitions**
-```javascript
-// Smooth color transition between expressions
-const lerpColor = (color1, color2, factor) => {
-    const c1 = parseInt(color1.slice(1), 16);
-    const c2 = parseInt(color2.slice(1), 16);
-    
-    const r1 = (c1 >> 16) & 255, g1 = (c1 >> 8) & 255, b1 = c1 & 255;
-    const r2 = (c2 >> 16) & 255, g2 = (c2 >> 8) & 255, b2 = c2 & 255;
-    
-    const r = Math.round(r1 + (r2 - r1) * factor);
-    const g = Math.round(g1 + (g2 - g1) * factor);
-    const b = Math.round(b1 + (b2 - b1) * factor);
-    
-    return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
-};
-```
-
----
-
-**Made with care for the creative community**
