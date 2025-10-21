@@ -32,11 +32,12 @@ OctopID is an expressive, animated face system built with **SVG** and **JavaScri
 - [Quick Start](#quick-start)
   - [Mode 1: Audio Server + HTML (Always Listening Mode)](#mode-1-audio-server--html-always-listening-mode)
   - [Mode 2: Terminal Input + HTML (Interactive Control)](#mode-2-terminal-input--html-interactive-control)
+  - [Mode 3: Kiosk Deployment (octopid.sh)](#mode-3-kiosk-deployment-octopidsh)
+- [WebSocket API Reference](#websocket-api-reference)
 - [Configuration](#configuration)
   - [Visual Customization](#visual-customization)
   - [Audio Configuration](#audio-configuration)
   - [Expression Customization](#expression-customization)
-- [WebSocket API Reference](#websocket-api-reference)
 - [Audio Server Deep Dive](#audio-server-deep-dive)
   - [How It Works](#how-it-works)
   - [FFT Analysis Explained](#fft-analysis-explained)
@@ -266,12 +267,158 @@ Enter command: audio on
 Enter command: audio off
 --> Audio streaming DISABLED. Sending reset signal.
 ```
+---
 
-**Exit:**
+### Mode 3: Kiosk Deployment (octopid.sh)
+
+This mode allows you to launch the OctopID face and its corresponding Python server simultaneously in a dedicated kiosk environment on a specific monitor. This is ideal for multi-screen Linux setups.
+
+#### Step 1: Detect Your Screen's Coordinates (Linux Only)
+
+Open a terminal window and run 
 ```bash
-Enter command: exit
-Exiting command loop.
+xrandr
 ```
+The output lists all connected monitors. You are looking for the coordinate numbers after the + sign.
+
+Example Output:
+```bash
+DP-2 connected 1280x768+1080+0
+```
+##### Interpretation
+- Screen name: DP-2
+- Resolution: 1280x768
+- Coordinates: X=1080, Y=0
+
+##### Action: Find the line for your target monitor and write down its X and Y coordinates.
+
+#### Step 2: Configure the octopid.sh Script
+
+Open the octopid.sh file and edit the configuration variables at the top.
+
+##### Example configuration
+```bash
+# Path to Python script
+PYTHON_SCRIPT="/path/to/audioServer.py"
+
+# Screen coordinates
+SCREEN_X=1080
+SCREEN_Y=0
+
+# Delay before launching browser (optional)
+STARTUP_DELAY=5
+```
+
+Note on Python Script: Set PYTHON_SCRIPT to either the absolute path of audioServer.py (for audio-reactive mode) or terminalInput.py (for interactive control).
+
+#### Step 3: Run the Kiosk Script
+
+First, ensure the script is executable:
+```bash
+chmod +x octopid.sh
+```
+Then, execute the script from your terminal:
+```bash
+./octopid.sh
+```
+The script will first execute the Python server, wait for the optional STARTUP_DELAY (default is 5 seconds), and then launch the Chromium browser on the specified screen in kiosk mode. The terminal will wait until the browser window is closed, and then the script will exit.
+
+---
+
+## WebSocket API Reference
+
+All communication between clients and the server uses JSON messages over WebSocket.
+
+### Server Address
+
+```
+ws://localhost:8760
+```
+
+### Message Format
+
+All messages are JSON objects with a `type` field that determines the action.
+
+---
+
+### Client → Server Messages
+
+#### **1. Change Mood**
+
+```json
+{
+    "type": "mood",
+    "mood": "happy"
+}
+```
+
+**Parameters:**
+- `type` (string): Must be `"mood"`
+- `mood` (string): One of the available moods listed above
+
+**Example (Python):**
+```python
+import asyncio
+import websockets
+import json
+
+async def send_mood():
+    async with websockets.connect("ws://localhost:8760") as ws:
+        await ws.send(json.dumps({"type": "mood", "mood": "happy"}))
+
+asyncio.run(send_mood())
+```
+
+---
+
+#### **2. Enable Audio Streaming**
+
+```json
+{
+    "type": "audio",
+    "command": "on"
+}
+```
+
+**Parameters:**
+- `type` (string): Must be `"audio"`
+- `command` (string): `"on"` to enable, `"off"` to disable
+
+**Example (Python):**
+```python
+async def enable_audio():
+    async with websockets.connect("ws://localhost:8760") as ws:
+        await ws.send(json.dumps({"type": "audio", "command": "on"}))
+```
+
+---
+
+#### **3. Disable Audio Streaming**
+
+```json
+{
+    "type": "audio",
+    "command": "off"
+}
+```
+
+---
+
+### Server → Client Messages
+
+#### **1. Mood Update**
+
+```json
+{
+    "type": "mood",
+    "mood": "happy"
+}
+```
+
+Sent to all connected clients when any client changes the mood.
+
+
+Sent continuously (~100 times per second) when audio streaming is enabled.
 
 ---
 
@@ -467,159 +614,6 @@ AVAILABLE_MOODS = (
 - **Pink (#E87AF2)** - Love, affection, sweetness, romance
 - **Gray (#95A5A6)** - Neutrality, fatigue, boredom, age
 - **Cyan (#40D4D6)** - Technology, clarity, communication, calm
-
----
-
-## WebSocket API Reference
-
-All communication between clients and the server uses JSON messages over WebSocket.
-
-### Server Address
-
-```
-ws://localhost:8760
-```
-
-### Message Format
-
-All messages are JSON objects with a `type` field that determines the action.
-
----
-
-### Client → Server Messages
-
-#### **1. Change Mood**
-
-```json
-{
-    "type": "mood",
-    "mood": "happy"
-}
-```
-
-**Parameters:**
-- `type` (string): Must be `"mood"`
-- `mood` (string): One of the available moods listed above
-
-**Example (Python):**
-```python
-import asyncio
-import websockets
-import json
-
-async def send_mood():
-    async with websockets.connect("ws://localhost:8760") as ws:
-        await ws.send(json.dumps({"type": "mood", "mood": "happy"}))
-
-asyncio.run(send_mood())
-```
-
----
-
-#### **2. Enable Audio Streaming**
-
-```json
-{
-    "type": "audio",
-    "command": "on"
-}
-```
-
-**Parameters:**
-- `type` (string): Must be `"audio"`
-- `command` (string): `"on"` to enable, `"off"` to disable
-
-**Example (Python):**
-```python
-async def enable_audio():
-    async with websockets.connect("ws://localhost:8760") as ws:
-        await ws.send(json.dumps({"type": "audio", "command": "on"}))
-```
-
----
-
-#### **3. Disable Audio Streaming**
-
-```json
-{
-    "type": "audio",
-    "command": "off"
-}
-```
-
----
-
-### Server → Client Messages
-
-#### **1. Mood Update**
-
-```json
-{
-    "type": "mood",
-    "mood": "happy"
-}
-```
-
-Sent to all connected clients when any client changes the mood.
-
----
-
-#### **2. Audio Data**
-
-```json
-{
-    "type": "audio",
-    "bass": 0.75
-}
-```
-
-**Parameters:**
-- `type` (string): Always `"audio"`
-- `bass` (float): Normalized bass energy level (0.0 to 1.0)
-
-Sent continuously (~100 times per second) when audio streaming is enabled.
-
----
-
-### Example: Complete Control Script
-
-```python
-import asyncio
-import websockets
-import json
-
-async def control_octopid():
-    uri = "ws://localhost:8760"
-    
-    async with websockets.connect(uri) as websocket:
-        # Change to happy mood
-        await websocket.send(json.dumps({
-            "type": "mood",
-            "mood": "happy"
-        }))
-        await asyncio.sleep(2)
-        
-        # Enable audio
-        await websocket.send(json.dumps({
-            "type": "audio",
-            "command": "on"
-        }))
-        await asyncio.sleep(5)
-        
-        # Disable audio
-        await websocket.send(json.dumps({
-            "type": "audio",
-            "command": "off"
-        }))
-        
-        # Change to sad mood
-        await websocket.send(json.dumps({
-            "type": "mood",
-            "mood": "sad"
-        }))
-
-asyncio.run(control_octopid())
-```
 
 ---
 
