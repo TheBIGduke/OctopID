@@ -1,48 +1,46 @@
 #!/bin/bash
-  
-# ==============================================================================
-# Universal Kiosk Script (Single Launch)
-# ==============================================================================
-  
-# --- CONFIGURE THESE FOUR VARIABLES ---
-  
-# 1. Set the absolute path to the HTML file you want to open.
-HTML_FILE="/path/to/your/file.html"
-  
-# 2. Set the absolute path to the Python file you want to run.
-#    (Use 'python3' if your system uses it instead of 'python')
-PYTHON_SCRIPT="/path/to/your/script.py"
 
-# 3. Set the X coordinate you found in Step 1.
-SCREEN_X=YOUR_X_COORDINATE
-  
-# 4. Set the Y coordinate you found in Step 1.
-SCREEN_Y=YOUR_Y_COORDINATE
-  
-# --- (Optional) Adjust delay in seconds ---
-STARTUP_DELAY=5
-# --- END CONFIGATION ---
-  
-# --- RUN PYTHON SCRIPT ---
-echo "Executing Python script: $PYTHON_SCRIPT"
-# The 'python' command will wait here until the script finishes.
-# Use 'python3' instead of 'python' if required by your environment.
-python "$PYTHON_SCRIPT"
-echo "Python script finished execution."
-# -------------------------
+# Define the target file and position variables
+TARGET_FILE="/path/to/your/face.html"
+TARGET_POSITION="X=YOUR_X_COORDINATE, Y=YOUR_Y_COORDINATE"
+PYTHON_SCRIPT="/path/to/your/audioServer.py"
 
-# This optional delay only happens once, when the script first starts.
-sleep $STARTUP_DELAY
-  
+# --- Cleanup function to run on exit (e.g., Ctrl+C) ---
+cleanup() {
+    echo -e "\nShutting down OctopID processes..."
+    # Kill the background Python server
+    pkill -f "python3 ${PYTHON_SCRIPT}" 
+    # Kill the foreground Chromium process and any related chrome processes
+    pkill -f "chromium-browser --kiosk file://${TARGET_FILE}"
+    pkill chrome
+    echo "Cleanup complete. Exiting."
+    exit 0
+}
+
+# Trap the INT signal (Ctrl+C) and execute the cleanup function
+trap cleanup INT
+
+# 1. Start the Python server in the background
+echo "Executing Python script: ${PYTHON_SCRIPT}"
+python3 ${PYTHON_SCRIPT} &
+SERVER_PID=$!
+
+# Give the server a moment to initialize
+sleep 2 
+
+# --- 2. Start Chromium in Kiosk mode ---
 echo "Starting Chromium in kiosk mode..."
-echo "Target File: $HTML_FILE"
-echo "Target Position: X=$SCREEN_X, Y=$SCREEN_Y"
-  
-# Launch Chromium browser with all the required settings.
-# The script will wait here until the browser window is closed, and then it will exit.
-chromium-browser --kiosk \
-                 --window-position=$SCREEN_X,$SCREEN_Y \
-                 --disable-features=TranslateUI \
-                 --app="file://$HTML_FILE"
-  
-echo "Chromium closed. Script finished."
+echo "Target File: ${TARGET_FILE}"
+echo "Target Position: ${TARGET_POSITION}"
+
+chromium-browser \
+    --kiosk \
+    --window-position='${TARGET_POSITION}' \
+    "file://${TARGET_FILE}"
+echo "Chromium closed. Killing background server (PID: ${SERVER_PID})."
+kill ${SERVER_PID}
+
+# Remove the trap just before a clean exit
+trap - INT
+
+exit 0
