@@ -82,7 +82,7 @@ cd OctopID
 ### 2. Install Python Dependencies
 
 ```bash
-pip install websockets soundcard numpy
+pip install websockets==15.0.1 soundcard==0.4.5 numpy==1.21.5
 ```
 ---
 ## Quick Reference
