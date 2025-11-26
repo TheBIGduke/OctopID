@@ -7,7 +7,7 @@
 
 OctopID is an expressive, animated face system built with **SVG** and **JavaScript**. It features 13 unique emotional expressions with smooth transitions, automatic eye movements (panning and blinking), and a special **audio-reactive "listening" mode** that synchronizes mouth movements with real-time audio input via WebSocket streaming. Perfect for virtual assistants, chatbots, interactive characters, or live audio visualization.
 
----
+![OctopID Face Animation](face.gif)
 
 ## Features
 
