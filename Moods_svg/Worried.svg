@@ -1,0 +1,5 @@
+<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+  <path d="M 5,80 L 35,60 L 35,110 L 5,110 Z" fill="#7f8c8d"/>
+  <path d="M 165,60 L 195,80 L 195,110 L 165,110 Z" fill="#7f8c8d"/>
+  <path d="M 60 145 Q 100 135 140 145" stroke="#7f8c8d" stroke-width="3" fill="none"/>
+</svg>
