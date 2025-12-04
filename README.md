@@ -9,6 +9,9 @@ OctopID is an expressive, animated face system built with **SVG** and **JavaScri
 
 ![OctopID Face Animation](face.gif)
 
+> [!NOTE]
+> If you want to see a full implementation of OctopID, go to [robot_face](https://github.com/TheBIGduke/robot_face.git)
+
 ## Features
 
 - **13 Unique Expressions** – From neutral to happy, sad, angry, surprised, and more exotic emotions like dizzy or innocent.
